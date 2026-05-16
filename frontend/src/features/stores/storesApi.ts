@@ -1,4 +1,4 @@
-import { backendApi } from '../../shared/api/backendApi';
+import { backendApi, publishStoreListChangedEvent } from '../../shared/api/backendApi';
 
 export type StoreStatus = 'active' | 'inactive' | 'archived';
 
@@ -55,6 +55,14 @@ export const storesApi = backendApi.injectEndpoints({
         body,
       }),
       invalidatesTags: [{ type: 'Stores', id: 'LIST' }],
+      async onQueryStarted(_request, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          publishStoreListChangedEvent();
+        } catch {
+          // Failed mutations do not change store lists.
+        }
+      },
     }),
     updateStore: builder.mutation<{ store: Store }, UpdateStoreRequest>({
       query: ({ storeId, csrfToken, csrfHeaderName, ...body }) => ({
@@ -69,6 +77,14 @@ export const storesApi = backendApi.injectEndpoints({
         { type: 'Stores', id: storeId },
         { type: 'Stores', id: 'LIST' },
       ],
+      async onQueryStarted(_request, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          publishStoreListChangedEvent();
+        } catch {
+          // Failed mutations do not change store lists.
+        }
+      },
     }),
   }),
 });
