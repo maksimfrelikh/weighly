@@ -1507,6 +1507,57 @@
       "evidence": [
         "docs/evidence/navigation-regression-2026-05-16.json"
       ]
+    }, 
+    {
+      "id": "TASK-061",
+      "category": "auth/session",
+      "priority": "high",
+      "description": "Emergency hotfix: production SPA gets stuck on Checking session after unauthenticated /api/auth/session returns 401. Treat session 401 as valid unauthenticated state, stop loading, render Login, and prevent infinite RTK Query/refetch/reset loop.",
+      "acceptance_criteria": [
+        "Fresh unauthenticated open of https://maksimfrelikh.ru renders Login screen, not infinite Checking session",
+        "GET /api/auth/session may return 401 for logged-out users, but it must transition app to unauthenticated state",
+        "No infinite repeated /api/auth/session requests while logged out",
+        "Global 401 handling does not create resetApiState/refetch loop for /api/auth/session",
+        "Admin login works after unauthenticated session check",
+        "Operator login works after unauthenticated session check",
+        "Logout returns to Login and clears protected dashboard/navigation",
+        "Hard refresh while logged out shows Login",
+        "Hard refresh while logged in restores authenticated dashboard"
+      ],
+      "test_steps": [
+        "Open https://maksimfrelikh.ru in fresh incognito window while logged out",
+        "Observe network requests for /api/auth/session",
+        "Confirm one or a small bounded number of 401 responses is allowed, but requests do not repeat endlessly",
+        "Confirm UI renders Login instead of Checking session",
+        "Login as admin and confirm dashboard/protected navigation loads",
+        "Hard refresh while logged in and confirm session restores correctly",
+        "Logout and confirm Login screen appears immediately",
+        "Hard refresh after logout and confirm Login screen remains stable",
+        "Repeat login/logout smoke check as operator",
+        "Verify protected endpoint 401 still clears stale protected UI without breaking auth bootstrap"
+      ],
+      "dependencies": [
+        "TASK-048",
+        "TASK-050"
+      ],
+      "status": "open",
+      "related_bugs": [
+        "BUG-UX-001",
+        "BUG-UX-007",
+        "BUG-UX-013"
+      ],
+      "evidence": [
+        "Production observation: https://maksimfrelikh.ru stuck on Checking session with repeated GET /api/auth/session -> 401 Unauthorized",
+        "docs/fixes/UX-HOTFIX-auth-session-401-loop.md"
+      ],
+      "regression_type": "production-hotfix",
+      "implementation_notes": [
+        "Do not treat /api/auth/session 401 as an exceptional loading state; it is the normal logged-out result",
+        "Session query 401 should set session/user to null and auth status to unauthenticated",
+        "Avoid calling api.util.resetApiState() in a way that immediately remounts/refetches /api/auth/session forever",
+        "Global 401 handler should distinguish auth bootstrap/session endpoint from protected business endpoints",
+        "Preserve the intended fixes for stale protected UI after logout/session loss, but prioritize stable login rendering"
+      ]
     }
   ]
 }
