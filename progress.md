@@ -1846,3 +1846,31 @@ Notes:
 
 Next:
 - Merge task branch to main, push main and task branch, remove runtime lock, then run `scripts/openclaw-after-task-check.sh TASK-057`.
+
+## 2026-05-16T21:01:00+02:00 — TASK-058 — Store Details responsive wrappers
+
+Status: done
+Owner: frontend (manager-bound subagent)
+Summary:
+- Added Store Details responsive containment to prevent page-level horizontal overflow on mobile/tablet.
+- Hardened Store Details table wrappers for Prices, Advertising, Scale Devices and Versions/Publishing so horizontal scroll remains inside table containers.
+- Added wrapping/min-width safeguards for Store Details metadata/cards and long text.
+- Manager inspected the diff and confirmed changes stayed inside TASK-058 frontend responsive scope.
+- Marked TASK-058 `status` as `done` after manager verification and Docker verification passed.
+
+Evidence:
+- Implementation commit inspected: `ba1ea09 TASK-058 fix store details responsive overflow`.
+- Changed files inspected: `frontend/src/main.tsx`, `frontend/src/styles.css`.
+- Whitespace check: `git diff --check main...HEAD` and `git diff --check` passed.
+- Frontend build: `npm --prefix frontend run build` passed.
+- Frontend typecheck: `cd frontend && npm exec tsc -- -b` passed.
+- Source/evidence inspection: `TASK_058_SOURCE_EVIDENCE_CHECK=PASS` for Store Details wrapper CSS and mobile regression evidence.
+- Docker verification: `scripts/openclaw-docker-verify.sh TASK-058` returned `DOCKER_VERIFY_RESULT=PASS`.
+
+Notes:
+- Docker verification ignored `docker-compose.override.yml` as required by workflow.
+- Docker verification emitted a non-blocking warning: Compose is configured to build using Bake, but buildx is not installed.
+- Runtime `.openclaw/locks/`, `.openclaw/handoffs/`, and `.openclaw/runtime-audit/` artifacts were kept uncommitted.
+
+Next:
+- Merge task branch to main, push main and task branch, remove runtime lock, then run `scripts/openclaw-after-task-check.sh TASK-058`.
