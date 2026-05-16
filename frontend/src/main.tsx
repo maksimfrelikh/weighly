@@ -6,6 +6,7 @@ import {
   backendApi,
   clearProtectedClientState,
   subscribeAuthSessionEvents,
+  subscribeStoreListChangedEvents,
 } from './shared/api/backendApi';
 import {
   useGetCsrfTokenQuery,
@@ -307,7 +308,11 @@ function Navigation({ user, activeView, onNavigate }: { user: AuthUser; activeVi
 }
 
 function StoresList({ user, onNavigate }: { user: AuthUser; onNavigate: (view: DashboardView) => void }) {
-  const { data, error, isLoading, isFetching, refetch } = useListStoresQuery();
+  const { data, error, isLoading, isFetching, refetch } = useListStoresQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMountOrArgChange: true,
+  });
   const stores = data?.stores ?? [];
   const errorMessage = error && 'message' in error ? error.message : null;
 
@@ -2874,7 +2879,11 @@ function ProblematicScaleCard({ device, onNavigate }: { device: AdminDashboardPr
 }
 
 function OperatorDashboardOverview({ onNavigate }: { onNavigate: (view: DashboardView) => void }) {
-  const { data, error, isLoading, isFetching, refetch } = useListStoresQuery();
+  const { data, error, isLoading, isFetching, refetch } = useListStoresQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMountOrArgChange: true,
+  });
   const stores = data?.stores ?? [];
   const errorMessage = error && 'message' in error ? error.message : null;
 
@@ -3128,6 +3137,10 @@ function App() {
     }
 
     store.dispatch(backendApi.util.invalidateTags(['Session']));
+  }), []);
+
+  useEffect(() => subscribeStoreListChangedEvents(() => {
+    store.dispatch(backendApi.util.invalidateTags([{ type: 'Stores', id: 'LIST' }]));
   }), []);
 
   const { data: session, isLoading, isFetching, error } = useGetSessionQuery();

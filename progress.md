@@ -1874,3 +1874,31 @@ Notes:
 
 Next:
 - Merge task branch to main, push main and task branch, remove runtime lock, then run `scripts/openclaw-after-task-check.sh TASK-058`.
+
+## 2026-05-16T21:22:00+02:00 — TASK-051 — store list cross-tab revalidation
+
+Status: done
+Owner: frontend (manager-bound subagent)
+Summary:
+- Added frontend cross-tab store-list change events using BroadcastChannel with localStorage fallback.
+- Store create/update mutations now publish a store-list changed event only after successful mutation completion.
+- The app subscribes to store-list events and invalidates the RTK Query `Stores/LIST` cache so other tabs revalidate without hard refresh.
+- Store list views now refetch on focus, reconnect and remount/route return to cover back-forward and route return behavior.
+- Manager inspected scope and confirmed changes stayed within TASK-051 frontend store-list cache/revalidation scope.
+- Marked TASK-051 `status` as `done` after manager verification and Docker verification passed.
+
+Evidence:
+- Implementation commit inspected: `5342dc8 TASK-051 revalidate store list across tabs`.
+- Changed files inspected: `frontend/src/shared/api/backendApi.ts`, `frontend/src/features/stores/storesApi.ts`, `frontend/src/main.tsx`.
+- Whitespace check: `git diff --check` passed.
+- Frontend build: `npm --prefix frontend run build` passed.
+- Frontend typecheck: `cd frontend && npm exec tsc -- -b` passed.
+- Docker verification: `scripts/openclaw-docker-verify.sh TASK-051` returned `DOCKER_VERIFY_RESULT=PASS`.
+
+Notes:
+- Docker verification ignored `docker-compose.override.yml` as required by workflow.
+- Docker verification emitted a non-blocking warning: Compose is configured to build using Bake, but buildx is not installed.
+- Runtime `.openclaw/locks/`, `.openclaw/handoffs/`, and `.openclaw/runtime-audit/` artifacts were kept uncommitted.
+
+Next:
+- Merge task branch to main, push main and task branch, remove runtime lock, then run `scripts/openclaw-after-task-check.sh TASK-051`.
