@@ -191,6 +191,7 @@ export const catalogApi = backendApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { storeId }) => [
         { type: 'CatalogCategories', id: storeId },
+        { type: 'CatalogPlacements', id: storeId },
         { type: 'Prices', id: storeId },
         { type: 'Publishing', id: storeId },
       ],
@@ -204,6 +205,7 @@ export const catalogApi = backendApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { storeId }) => [
         { type: 'CatalogCategories', id: storeId },
+        { type: 'CatalogPlacements', id: storeId },
         { type: 'Prices', id: storeId },
         { type: 'Publishing', id: storeId },
       ],
@@ -217,6 +219,7 @@ export const catalogApi = backendApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { storeId }) => [
         { type: 'CatalogCategories', id: storeId },
+        { type: 'CatalogPlacements', id: storeId },
         { type: 'Prices', id: storeId },
         { type: 'Publishing', id: storeId },
       ],
