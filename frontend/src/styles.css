@@ -27,6 +27,7 @@ input {
 
 .dashboard-shell {
   width: min(1040px, 100%);
+  min-width: 0;
   min-height: 100vh;
   margin: 0 auto;
   padding: 2rem;
@@ -54,6 +55,8 @@ input {
 .dashboard-header,
 .panel {
   padding: 1.5rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dashboard-header {
@@ -70,6 +73,15 @@ input {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.dashboard-header > *,
+.panel-heading > *,
+.panel-heading h2,
+.panel-heading .muted {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .eyebrow {
@@ -253,10 +265,14 @@ select:focus {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .action-row button {
   margin-top: 0;
+  min-width: 0;
+  white-space: normal;
 }
 
 .store-list {
@@ -269,15 +285,21 @@ select:focus {
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   padding: 1rem;
   border: 1px solid #dce4f3;
   border-radius: 18px;
   background: #fbfdff;
 }
 
+.store-card > * {
+  min-width: 0;
+}
+
 .store-card h3 {
   margin: 0.15rem 0 0.35rem;
   font-size: 1.25rem;
+  overflow-wrap: anywhere;
 }
 
 .store-code {
@@ -286,6 +308,7 @@ select:focus {
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
 }
 
 .store-actions {
@@ -294,10 +317,12 @@ select:focus {
   gap: 0.5rem;
   align-items: center;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .store-actions button {
   margin-top: 0;
+  white-space: normal;
 }
 
 .badge {
@@ -1472,6 +1497,28 @@ select:focus {
 .dashboard-overview {
   display: grid;
   gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.dashboard-overview *,
+.dashboard-overview *::before,
+.dashboard-overview *::after {
+  min-width: 0;
+}
+
+.dashboard-overview h3,
+.dashboard-overview h4,
+.dashboard-overview strong,
+.dashboard-overview .muted,
+.dashboard-overview .inline-error,
+.dashboard-overview .badge {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-overview button {
+  white-space: normal;
 }
 
 .metric-grid {
@@ -1483,6 +1530,7 @@ select:focus {
 .metric-card {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
   padding: 1rem;
   border: 1px solid #dce4f3;
   border-radius: 18px;
@@ -1491,6 +1539,7 @@ select:focus {
 
 .metric-card span {
   color: #5d6b85;
+  overflow-wrap: anywhere;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -1530,6 +1579,7 @@ select:focus {
 .quick-links {
   display: grid;
   gap: 0.85rem;
+  min-width: 0;
   padding: 1rem;
   border: 1px solid #dce4f3;
   border-radius: 18px;
@@ -1545,8 +1595,13 @@ select:focus {
 
 .section-heading-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.section-heading-row > * {
+  min-width: 0;
 }
 
 .dashboard-list,
@@ -1560,6 +1615,7 @@ select:focus {
 
 .dashboard-list-item {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-start;
   justify-content: space-between;
@@ -1582,6 +1638,10 @@ select:focus {
   gap: 0.5rem;
 }
 
+.dashboard-list-actions button {
+  justify-self: stretch;
+}
+
 .problem-scale-card,
 .operator-store-card {
   display: grid;
@@ -1594,9 +1654,14 @@ select:focus {
 
 .problem-scale-heading {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.problem-scale-heading > * {
+  min-width: 0;
 }
 
 .reason-row {
@@ -1651,6 +1716,36 @@ select:focus {
   .dashboard-section-grid,
   .operator-store-grid,
   .problem-scale-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-shell {
+    padding: 1rem;
+  }
+
+  .dashboard-header,
+  .panel {
+    padding: 1rem;
+  }
+
+  .metric-card strong {
+    font-size: 1.65rem;
+  }
+
+  .dashboard-list-item,
+  .dashboard-list-actions,
+  .problem-scale-heading {
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .dashboard-list-actions {
+    width: 100%;
+  }
+
+  .compact-details {
     grid-template-columns: 1fr;
   }
 }
