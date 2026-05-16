@@ -1712,3 +1712,27 @@ Notes:
 
 Next:
 - Merge task branch to main, push main and task branch, remove runtime lock, then run `scripts/openclaw-after-task-check.sh TASK-047` if supported; otherwise record the post-UAT gate limitation.
+
+## 2026-05-16 20:22 — TASK-048 — frontend auth/session cache clearing
+
+Status: done
+Owner: frontend
+Summary:
+- Implemented frontend auth/session state recovery for logout and session invalidation.
+- Successful logout now resets RTK Query API state so protected cached data, dashboard, and protected navigation clear immediately.
+- `/api/auth/session` 401 now resolves to unauthenticated session state and renders Login instead of retaining stale dashboard UI.
+- Protected endpoint 401 responses reset RTK Query state for protected data.
+- Logout clears protected hash navigation after success.
+- CSRF login/logout behavior preserved.
+
+Evidence:
+- Implementation commit: `e34d0d6 fix frontend auth session cache clearing`.
+- Changed files reviewed: `frontend/src/features/auth/authApi.ts`, `frontend/src/shared/api/backendApi.ts`, `frontend/src/main.tsx`.
+- Manager source check: `TASK_048_MANAGER_SOURCE_CHECK=PASS`.
+- `git diff --check` passed.
+- `npm --prefix frontend run build` passed.
+- `cd frontend && npm exec tsc -- -b` passed.
+- `scripts/openclaw-docker-verify.sh TASK-048` passed with `DOCKER_VERIFY_RESULT=PASS`.
+
+Next:
+- TASK-049 and TASK-050 are unblocked after TASK-048 final gate passes.
