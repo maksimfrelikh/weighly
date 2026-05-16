@@ -1170,269 +1170,343 @@
       "status": "done"
     },
     {
-    "id": "TASK-048",
-    "category": "auth/session",
-    "priority": "high",
-    "description": "SPA keeps authenticated dashboard visible after logout/session invalidation. Clear cached auth/session/user state, reset protected query data, navigate to unauthenticated route, handle 401 from /api/auth/session.",
-    "acceptance_criteria": [
-      "On successful logout, dashboard and protected navigation removed immediately",
-      "All tabs transition to unauthenticated state",
-      "401 from protected endpoints triggers login/unauthenticated state",
-      "RTK Query cache cleared for protected queries"
-    ],
-    "test_steps": [
-      "Log in as admin/operator",
-      "Navigate to protected route",
-      "Click Logout",
-      "Check dashboard, navigation and protected controls are removed",
-      "Simulate 401 from /api/auth/session and confirm SPA transitions to login"
-    ],
-    "dependencies": [],
-    "status": "open",
-    "related_bugs": ["BUG-UX-001", "BUG-UX-007", "BUG-UX-013"],
-    "evidence": ["docs/evidence/auth-post-logout-controls-evidence-2026-05-16.json","docs/evidence/cache-session-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-049",
-    "category": "auth/session",
-    "priority": "high",
-    "description": "Multi-tab logout may fail with stale CSRF token. Make logout idempotent, retry on CSRF 403, broadcast auth/session changes across tabs, clear stale protected UI.",
-    "acceptance_criteria": [
-      "Logout succeeds in all open tabs",
-      "Protected UI cleared on other tabs",
-      "CSRF 403 triggers automatic refresh and retry"
-    ],
-    "test_steps": [
-      "Open SPA in multiple tabs",
-      "Perform logout in one tab",
-      "Observe UI and network requests in other tabs",
-      "Confirm logout succeeds, stale UI cleared, CSRF refresh triggers retry if needed"
-    ],
-    "dependencies": ["TASK-048"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-003"],
-    "evidence": ["docs/evidence/navigation-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-050",
-    "category": "auth/session",
-    "priority": "high",
-    "description": "401 handling on protected requests. Normalize handling: clear cached session/user state, invalidate protected cached data, redirect/render login on unauthenticated responses.",
-    "acceptance_criteria": [
-      "Any 401 from protected endpoints clears dashboard/navigation",
-      "User redirected to login or re-auth flow",
-      "Stale RTK Query data is removed"
-    ],
-    "test_steps": [
-      "Log in as admin/operator",
-      "Invalidate session cookies while SPA is mounted",
-      "Perform protected API request",
-      "Confirm SPA transitions to login and cached protected data cleared"
-    ],
-    "dependencies": ["TASK-048"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-007"],
-    "evidence": ["docs/evidence/error-loading-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-051",
-    "category": "cache/rtk-query",
-    "priority": "medium",
-    "description": "Store list remains stale in another open tab after edits in one tab. Implement cross-tab revalidation and cache invalidation.",
-    "acceptance_criteria": [
-      "Store list in other tabs updates after mutation in one tab",
-      "Route return or back-forward navigation reflects updated data",
-      "Hard refresh not required for correct data"
-    ],
-    "test_steps": [
-      "Open Store list in tab B",
-      "Edit store in tab A",
-      "Return to tab B via route/back-forward navigation",
-      "Confirm updated store name is displayed"
-    ],
-    "dependencies": ["TASK-048", "TASK-049"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-011"],
-    "evidence": ["docs/evidence/cache-session-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-052",
-    "category": "cache/rtk-query",
-    "priority": "medium",
-    "description": "Store detail page remains stale in another tab after edits. Implement cross-tab cache invalidation and refetch on focus/route reopen.",
-    "acceptance_criteria": [
-      "Store detail page shows updated data after edits in another tab",
-      "Stale detail state cleared on route revisit or tab focus",
-      "Hard refresh recovers correct data if needed"
-    ],
-    "test_steps": [
-      "Open store detail in tab C",
-      "Edit store in tab A",
-      "Return to tab C",
-      "Confirm updated details displayed"
-    ],
-    "dependencies": ["TASK-051"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-012"],
-    "evidence": ["docs/evidence/cache-session-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-053",
-    "category": "RBAC",
-    "priority": "low",
-    "description": "Operator sees wrong access-denied copy in Global Logs/Users Access. Show correct route-specific messages.",
-    "acceptance_criteria": [
-      "Access-denied panel heading matches requested forbidden route",
-      "Operator cannot see admin-only content"
-    ],
-    "test_steps": [
-      "Log in as operator",
-      "Open #global-logs and #users-access",
-      "Confirm panel heading corresponds to forbidden route"
-    ],
-    "dependencies": [],
-    "status": "open",
-    "related_bugs": ["BUG-UX-004"],
-    "evidence": ["docs/evidence/rbac-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-054",
-    "category": "RBAC",
-    "priority": "medium",
-    "description": "Operator direct admin-only store form routes silently render overview. Render explicit access-denied or redirect.",
-    "acceptance_criteria": [
-      "Forbidden hash replaced or access-denied rendered",
-      "UI state and URL hash consistent"
-    ],
-    "test_steps": [
-      "Operator opens #store-create or #store-edit:<id>",
-      "Confirm forbidden UI or redirect to safe route"
-    ],
-    "dependencies": ["TASK-053"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-005"],
-    "evidence": ["docs/evidence/rbac-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-055",
-    "category": "RBAC",
-    "priority": "high",
-    "description": "Foreign-store 403 leaves stale assigned-store details and controls visible. Clear previous store data and gate child tabs/controls.",
-    "acceptance_criteria": [
-      "Previous assigned store details not visible after foreign-store 403",
-      "Forbidden error displayed without stale interactive controls",
-      "Refresh recovers correct state"
-    ],
-    "test_steps": [
-      "Open assigned store",
-      "Navigate to foreign store",
-      "Observe UI after 403",
-      "Confirm stale controls removed"
-    ],
-    "dependencies": ["TASK-054"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-006"],
-    "evidence": ["docs/evidence/rbac-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-056",
-    "category": "catalog",
-    "priority": "high",
-    "description": "Malformed or missing category/product IDs may break UI/backend. Ensure edit persistence and cache update.",
-    "acceptance_criteria": [
-      "PATCH updates reflected in cache and UI",
-      "Refresh preserves edits",
-      "Invalid IDs redirect to safe not-found panel"
-    ],
-    "test_steps": [
-      "Edit category/product with PATCH",
-      "Check UI and cache update",
-      "Test malformed/empty hash routes"
-    ],
-    "dependencies": [],
-    "status": "open",
-    "related_bugs": ["BUG-UX-002"],
-    "evidence": ["docs/evidence/navigation-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-057",
-    "category": "responsive",
-    "priority": "high",
-    "description": "Global Logs layout causes horizontal overflow on mobile/tablet. Apply responsive styling.",
-    "acceptance_criteria": [
-      "Log cards fit within viewport",
-      "Filters and tables scroll inside containers",
-      "Mobile breakpoints tested"
-    ],
-    "test_steps": [
-      "Open Global Logs at 390x844, 430x932, 768x1024, 1024x768",
-      "Check for horizontal overflow",
-      "Confirm filters/tables scroll correctly"
-    ],
-    "dependencies": [],
-    "status": "open",
-    "related_bugs": ["BUG-UX-008"],
-    "evidence": ["docs/evidence/mobile-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-058",
-    "category": "responsive",
-    "priority": "high",
-    "description": "Store Details tabs create horizontal overflow on mobile/tablet. Apply responsive wrappers.",
-    "acceptance_criteria": [
-      "Tables/cards contained within viewport",
-      "Portrait and landscape breakpoints work",
-      "Horizontal scroll only on tables, not whole page"
-    ],
-    "test_steps": [
-      "Open Store Details tabs at mobile/tablet viewports",
-      "Check layout width and overflow",
-      "Confirm horizontal scroll works only inside table wrapper"
-    ],
-    "dependencies": ["TASK-057"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-009"],
-    "evidence": ["docs/evidence/mobile-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-059",
-    "category": "responsive",
-    "priority": "medium",
-    "description": "Admin dashboard/store overview cards do not fit narrow viewports. Wrap/stack cards and action rows.",
-    "acceptance_criteria": [
-      "Cards and action rows fit viewport",
-      "Long labels wrap, min-width:0 applied",
-      "No horizontal page-level scroll required"
-    ],
-    "test_steps": [
-      "Open dashboard/store overview at 390x844, 430x932, 1024x768",
-      "Check for horizontal overflow",
-      "Confirm buttons/cards wrap correctly"
-    ],
-    "dependencies": ["TASK-058"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-010"],
-    "evidence": ["docs/evidence/mobile-regression-2026-05-16.json"]
-  },
-  {
-    "id": "TASK-060",
-    "category": "routing",
-    "priority": "medium",
-    "description": "Malformed hash routes render broken UI or backend errors. Validate and redirect empty/invalid IDs.",
-    "acceptance_criteria": [
-      "Invalid/empty hash IDs redirect to safe list or not-found panel",
-      "No backend 500 errors due to malformed routes",
-      "Page retains meaningful header/body"
-    ],
-    "test_steps": [
-      "Open malformed hash routes (#store:, #product-edit:does-not-exist)",
-      "Check console/network for backend errors",
-      "Confirm SPA recovers to safe route or shows not-found"
-    ],
-    "dependencies": ["TASK-056"],
-    "status": "open",
-    "related_bugs": ["BUG-UX-002"],
-    "evidence": ["docs/evidence/navigation-regression-2026-05-16.json"]
-  }
+      "id": "TASK-048",
+      "category": "auth/session",
+      "priority": "high",
+      "description": "SPA keeps authenticated dashboard visible after logout/session invalidation. Clear cached auth/session/user state, reset protected query data, navigate to unauthenticated route, handle 401 from /api/auth/session.",
+      "acceptance_criteria": [
+        "On successful logout, dashboard and protected navigation removed immediately",
+        "All tabs transition to unauthenticated state",
+        "401 from protected endpoints triggers login/unauthenticated state",
+        "RTK Query cache cleared for protected queries"
+      ],
+      "test_steps": [
+        "Log in as admin/operator",
+        "Navigate to protected route",
+        "Click Logout",
+        "Check dashboard, navigation and protected controls are removed",
+        "Simulate 401 from /api/auth/session and confirm SPA transitions to login"
+      ],
+      "dependencies": [],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-001",
+        "BUG-UX-007",
+        "BUG-UX-013"
+      ],
+      "evidence": [
+        "docs/evidence/auth-post-logout-controls-evidence-2026-05-16.json",
+        "docs/evidence/cache-session-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-049",
+      "category": "auth/session",
+      "priority": "high",
+      "description": "Multi-tab logout may fail with stale CSRF token. Make logout idempotent, retry on CSRF 403, broadcast auth/session changes across tabs, clear stale protected UI.",
+      "acceptance_criteria": [
+        "Logout succeeds in all open tabs",
+        "Protected UI cleared on other tabs",
+        "CSRF 403 triggers automatic refresh and retry"
+      ],
+      "test_steps": [
+        "Open SPA in multiple tabs",
+        "Perform logout in one tab",
+        "Observe UI and network requests in other tabs",
+        "Confirm logout succeeds, stale UI cleared, CSRF refresh triggers retry if needed"
+      ],
+      "dependencies": [
+        "TASK-048"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-003"
+      ],
+      "evidence": [
+        "docs/evidence/navigation-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-050",
+      "category": "auth/session",
+      "priority": "high",
+      "description": "401 handling on protected requests. Normalize handling: clear cached session/user state, invalidate protected cached data, redirect/render login on unauthenticated responses.",
+      "acceptance_criteria": [
+        "Any 401 from protected endpoints clears dashboard/navigation",
+        "User redirected to login or re-auth flow",
+        "Stale RTK Query data is removed"
+      ],
+      "test_steps": [
+        "Log in as admin/operator",
+        "Invalidate session cookies while SPA is mounted",
+        "Perform protected API request",
+        "Confirm SPA transitions to login and cached protected data cleared"
+      ],
+      "dependencies": [
+        "TASK-048"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-007"
+      ],
+      "evidence": [
+        "docs/evidence/error-loading-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-051",
+      "category": "cache/rtk-query",
+      "priority": "medium",
+      "description": "Store list remains stale in another open tab after edits in one tab. Implement cross-tab revalidation and cache invalidation.",
+      "acceptance_criteria": [
+        "Store list in other tabs updates after mutation in one tab",
+        "Route return or back-forward navigation reflects updated data",
+        "Hard refresh not required for correct data"
+      ],
+      "test_steps": [
+        "Open Store list in tab B",
+        "Edit store in tab A",
+        "Return to tab B via route/back-forward navigation",
+        "Confirm updated store name is displayed"
+      ],
+      "dependencies": [
+        "TASK-048",
+        "TASK-049"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-011"
+      ],
+      "evidence": [
+        "docs/evidence/cache-session-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-052",
+      "category": "cache/rtk-query",
+      "priority": "medium",
+      "description": "Store detail page remains stale in another tab after edits. Implement cross-tab cache invalidation and refetch on focus/route reopen.",
+      "acceptance_criteria": [
+        "Store detail page shows updated data after edits in another tab",
+        "Stale detail state cleared on route revisit or tab focus",
+        "Hard refresh recovers correct data if needed"
+      ],
+      "test_steps": [
+        "Open store detail in tab C",
+        "Edit store in tab A",
+        "Return to tab C",
+        "Confirm updated details displayed"
+      ],
+      "dependencies": [
+        "TASK-051"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-012"
+      ],
+      "evidence": [
+        "docs/evidence/cache-session-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-053",
+      "category": "RBAC",
+      "priority": "low",
+      "description": "Operator sees wrong access-denied copy in Global Logs/Users Access. Show correct route-specific messages.",
+      "acceptance_criteria": [
+        "Access-denied panel heading matches requested forbidden route",
+        "Operator cannot see admin-only content"
+      ],
+      "test_steps": [
+        "Log in as operator",
+        "Open #global-logs and #users-access",
+        "Confirm panel heading corresponds to forbidden route"
+      ],
+      "dependencies": [],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-004"
+      ],
+      "evidence": [
+        "docs/evidence/rbac-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-054",
+      "category": "RBAC",
+      "priority": "medium",
+      "description": "Operator direct admin-only store form routes silently render overview. Render explicit access-denied or redirect.",
+      "acceptance_criteria": [
+        "Forbidden hash replaced or access-denied rendered",
+        "UI state and URL hash consistent"
+      ],
+      "test_steps": [
+        "Operator opens #store-create or #store-edit:<id>",
+        "Confirm forbidden UI or redirect to safe route"
+      ],
+      "dependencies": [
+        "TASK-053"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-005"
+      ],
+      "evidence": [
+        "docs/evidence/rbac-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-055",
+      "category": "RBAC",
+      "priority": "high",
+      "description": "Foreign-store 403 leaves stale assigned-store details and controls visible. Clear previous store data and gate child tabs/controls.",
+      "acceptance_criteria": [
+        "Previous assigned store details not visible after foreign-store 403",
+        "Forbidden error displayed without stale interactive controls",
+        "Refresh recovers correct state"
+      ],
+      "test_steps": [
+        "Open assigned store",
+        "Navigate to foreign store",
+        "Observe UI after 403",
+        "Confirm stale controls removed"
+      ],
+      "dependencies": [
+        "TASK-054"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-006"
+      ],
+      "evidence": [
+        "docs/evidence/rbac-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-056",
+      "category": "catalog",
+      "priority": "high",
+      "description": "Malformed or missing category/product IDs may break UI/backend. Ensure edit persistence and cache update.",
+      "acceptance_criteria": [
+        "PATCH updates reflected in cache and UI",
+        "Refresh preserves edits",
+        "Invalid IDs redirect to safe not-found panel"
+      ],
+      "test_steps": [
+        "Edit category/product with PATCH",
+        "Check UI and cache update",
+        "Test malformed/empty hash routes"
+      ],
+      "dependencies": [],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-002"
+      ],
+      "evidence": [
+        "docs/evidence/navigation-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-057",
+      "category": "responsive",
+      "priority": "high",
+      "description": "Global Logs layout causes horizontal overflow on mobile/tablet. Apply responsive styling.",
+      "acceptance_criteria": [
+        "Log cards fit within viewport",
+        "Filters and tables scroll inside containers",
+        "Mobile breakpoints tested"
+      ],
+      "test_steps": [
+        "Open Global Logs at 390x844, 430x932, 768x1024, 1024x768",
+        "Check for horizontal overflow",
+        "Confirm filters/tables scroll correctly"
+      ],
+      "dependencies": [],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-008"
+      ],
+      "evidence": [
+        "docs/evidence/mobile-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-058",
+      "category": "responsive",
+      "priority": "high",
+      "description": "Store Details tabs create horizontal overflow on mobile/tablet. Apply responsive wrappers.",
+      "acceptance_criteria": [
+        "Tables/cards contained within viewport",
+        "Portrait and landscape breakpoints work",
+        "Horizontal scroll only on tables, not whole page"
+      ],
+      "test_steps": [
+        "Open Store Details tabs at mobile/tablet viewports",
+        "Check layout width and overflow",
+        "Confirm horizontal scroll works only inside table wrapper"
+      ],
+      "dependencies": [
+        "TASK-057"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-009"
+      ],
+      "evidence": [
+        "docs/evidence/mobile-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-059",
+      "category": "responsive",
+      "priority": "medium",
+      "description": "Admin dashboard/store overview cards do not fit narrow viewports. Wrap/stack cards and action rows.",
+      "acceptance_criteria": [
+        "Cards and action rows fit viewport",
+        "Long labels wrap, min-width:0 applied",
+        "No horizontal page-level scroll required"
+      ],
+      "test_steps": [
+        "Open dashboard/store overview at 390x844, 430x932, 1024x768",
+        "Check for horizontal overflow",
+        "Confirm buttons/cards wrap correctly"
+      ],
+      "dependencies": [
+        "TASK-058"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-010"
+      ],
+      "evidence": [
+        "docs/evidence/mobile-regression-2026-05-16.json"
+      ]
+    },
+    {
+      "id": "TASK-060",
+      "category": "routing",
+      "priority": "medium",
+      "description": "Malformed hash routes render broken UI or backend errors. Validate and redirect empty/invalid IDs.",
+      "acceptance_criteria": [
+        "Invalid/empty hash IDs redirect to safe list or not-found panel",
+        "No backend 500 errors due to malformed routes",
+        "Page retains meaningful header/body"
+      ],
+      "test_steps": [
+        "Open malformed hash routes (#store:, #product-edit:does-not-exist)",
+        "Check console/network for backend errors",
+        "Confirm SPA recovers to safe route or shows not-found"
+      ],
+      "dependencies": [
+        "TASK-056"
+      ],
+      "status": "pending",
+      "related_bugs": [
+        "BUG-UX-002"
+      ],
+      "evidence": [
+        "docs/evidence/navigation-regression-2026-05-16.json"
+      ]
+    }
   ]
 }
