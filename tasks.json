@@ -1188,7 +1188,7 @@
         "Simulate 401 from /api/auth/session and confirm SPA transitions to login"
       ],
       "dependencies": [],
-      "status": "pending",
+      "status": "done",
       "related_bugs": [
         "BUG-UX-001",
         "BUG-UX-007",
