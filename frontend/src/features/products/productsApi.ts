@@ -116,6 +116,9 @@ export const productsApi = backendApi.injectEndpoints({
       invalidatesTags: (_result, _error, { productId }) => [
         { type: 'Products', id: productId },
         { type: 'Products', id: 'LIST' },
+        { type: 'CatalogPlacements' },
+        { type: 'Prices' },
+        { type: 'Publishing' },
       ],
     }),
     uploadProductImage: builder.mutation<{ fileAsset: FileAsset }, UploadProductImageRequest>({
