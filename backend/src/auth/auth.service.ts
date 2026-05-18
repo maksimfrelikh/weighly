@@ -6,6 +6,7 @@ import type { AppConfiguration } from '../config/app.config';
 import { hashPassword, verifyPassword } from './password.util';
 import { createSessionToken, hashSessionToken } from './session-token.util';
 import { createInviteToken, hashInviteToken } from './invite-token.util';
+import { validateInviteEmail } from './email-validation.util';
 import { createPasswordResetToken, hashPasswordResetToken } from './password-reset-token.util';
 import type { AuthenticatedUser } from './auth.types';
 
@@ -261,7 +262,7 @@ export class AuthService {
   }
 
   async createInvite(input: CreateInviteInput, actorUserId: string | undefined, context: RequestContext) {
-    const email = this.requireEmail(input.email);
+    const email = this.requireValidInviteEmail(input.email);
     const emailNormalized = this.normalizeEmail(email);
     const role = this.requireRole(input.role);
     const expiresAt = this.requireDate(input.expiresAt, 'expiresAt');
@@ -651,6 +652,16 @@ export class AuthService {
     const trimmedEmail = typeof email === 'string' ? email.trim() : '';
     const normalizedEmail = this.normalizeEmail(trimmedEmail);
     if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      throw new BadRequestException('Valid email is required');
+    }
+
+    return trimmedEmail;
+  }
+
+  private requireValidInviteEmail(email: string): string {
+    const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+    const result = validateInviteEmail(trimmedEmail);
+    if (!result.valid) {
       throw new BadRequestException('Valid email is required');
     }
 
