@@ -165,11 +165,11 @@
 
 ## 5.2. Store Details
 
-`Store Details` — центральная рабочая страница MVP.
+`Store Details` — центральная рабочая страница MVP. Реализована как single-page layout: все секции отрендерены стеком на одной странице, без табов и без отдельных под-маршрутов на секцию. Переключение между разделами осуществляется скроллом; внутри каждой секции есть собственные action-кнопки (Refresh, Create, Publish и т. п.).
 
-Вкладки:
+Порядок секций сверху вниз:
 
-- Overview
+- Overview (header с метаданными магазина: Address, Timezone, status)
 - Catalog
 - Prices
 - Advertising
@@ -177,15 +177,19 @@
 - Versions / Publishing
 - Logs
 
+Канонический URL страницы: `#store:{uuid}` (singular `store`, разделитель — двоеточие). См. §5.3 / §5.4.
+
 ## 5.3. Навигация администратора
 
-- Dashboard
-- Stores
-- Products
-- Users & Access
-- Logs
+Верхнеуровневые пункты и их канонические URL (приложение использует hash routing):
 
-Внутри магазина:
+- Dashboard — default view (без хеша)
+- Stores — `#stores`
+- Products — `#products`
+- Users & Access — `#users-access`
+- Logs (Global Logs) — `#global-logs`
+
+Внутри магазина (single-page layout, см. §5.2 — секции стеком, без табов):
 
 - Overview
 - Catalog
@@ -195,19 +199,25 @@
 - Versions
 - Logs
 
+Канонический URL страницы магазина: `#store:{uuid}` (singular + двоеточие).
+
 ## 5.4. Навигация оператора
 
-- Dashboard
-- Stores
-- Products
+Верхнеуровневые пункты и их канонические URL (приложение использует hash routing):
 
-Внутри доступного магазина:
+- Dashboard — default view (без хеша)
+- Stores — `#stores`
+- Products — `#products`
+
+Внутри доступного магазина (single-page layout, см. §5.2 — секции стеком, без табов):
 
 - Catalog
 - Prices
 - Advertising
 - Versions
 - простой статус обновления весов
+
+Канонический URL страницы магазина: `#store:{uuid}` (singular + двоеточие).
 
 ---
 
@@ -893,7 +903,7 @@ ScaleDevice
 ### Правила
 
 - весы принадлежат магазину через `storeId`;
-- `deviceCode` — внешний код устройства;
+- `deviceCode` — внешний код устройства; уникален глобально (не per-store), повторная регистрация того же `deviceCode` в любом магазине → 409 Conflict;
 - `apiTokenHash` хранит hash токена;
 - `lastSeenAt` обновляется при успешном обращении;
 - `lastSyncAt` обновляется после successful sync;
