@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { CategoryStatus, PlacementStatus, Prisma, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { CascadeArchiveService, type CascadeSummary } from '../shared/cascade-archive.service';
 
 export type RequestContext = {
   ipAddress?: string;
@@ -115,6 +116,7 @@ export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogs: AuditLogService,
+    private readonly cascadeArchive: CascadeArchiveService,
   ) {}
 
   async listCategoryTree(storeId: string, input: ListCategoryTreeInput = {}) {
@@ -231,29 +233,60 @@ export class CatalogService {
       throw new BadRequestException('At least one category field is required');
     }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const result = await tx.category.update({ where: { catalogId_id: { catalogId: catalog.id, id: category.id } }, data });
-      await this.auditLogs.create(tx, {
-        data: {
-          actorUserId,
-          action,
-          entityType: 'Category',
-          entityId: category.id,
-          storeId: catalog.storeId,
-          beforeData: this.toCategoryAuditData(category),
-          afterData: this.toCategoryAuditData(result),
-          metadata: {
-            catalogId: catalog.id,
-            canAcceptActivePlacements: this.canAcceptActivePlacements(result),
-          },
-          ipAddress: context.ipAddress,
-          userAgent: context.userAgent,
-        },
-      });
-      return result;
-    });
+    const isCascadeArchive = data.status === 'archived' && category.status !== 'archived';
 
-    return { category: this.toCategoryResponse(updated) };
+    const { updated, cascadeSummary } = await this.prisma.$transaction(
+      async (tx) => {
+        const result = await tx.category.update({ where: { catalogId_id: { catalogId: catalog.id, id: category.id } }, data });
+
+        let summary: CascadeSummary | null = null;
+        if (isCascadeArchive) {
+          summary = await this.cascadeArchive.cascadeCategoryArchive(
+            tx,
+            catalog.id,
+            category.id,
+            catalog.storeId,
+            actorUserId,
+            context,
+          );
+        }
+
+        await this.auditLogs.create(tx, {
+          data: {
+            actorUserId,
+            action,
+            entityType: 'Category',
+            entityId: category.id,
+            storeId: catalog.storeId,
+            beforeData: this.toCategoryAuditData(category),
+            afterData: this.toCategoryAuditData(result),
+            metadata: {
+              catalogId: catalog.id,
+              canAcceptActivePlacements: this.canAcceptActivePlacements(result),
+              ...(summary
+                ? {
+                    cascade: {
+                      correlationId: summary.correlationId,
+                      counts: {
+                        categories: summary.categories.length,
+                        placements: summary.placements.length,
+                      },
+                    },
+                  }
+                : {}),
+            },
+            ipAddress: context.ipAddress,
+            userAgent: context.userAgent,
+          },
+        });
+        return { updated: result, cascadeSummary: summary };
+      },
+      isCascadeArchive
+        ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        : undefined,
+    );
+
+    return { category: this.toCategoryResponse(updated), cascade: cascadeSummary };
   }
 
   async reorderCategories(storeId: string, input: ReorderCategoriesInput, actorUserId: string, context: RequestContext) {

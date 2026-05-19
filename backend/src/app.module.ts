@@ -13,6 +13,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { PublishingModule } from './publishing/publishing.module';
 import { ScalesModule } from './scales/scales.module';
+import { SharedModule } from './shared/shared.module';
 import { StoresModule } from './stores/stores.module';
 import { UsersModule } from './users/users.module';
 
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     AppConfigModule,
     PrismaModule,
+    SharedModule,
     AuthModule,
     UsersModule,
     StoresModule,
