@@ -1,0 +1,208 @@
+{
+  "block": "Advertising",
+  "verdict": "PASS",
+  "passed": 10,
+  "total": 10,
+  "medianMs": 10,
+  "totalElapsedMs": 896,
+  "storeId": "e4d711db-dddd-4749-9a4c-0c2aed2f4f77",
+  "createdBannerId": "124147e2-8855-42c7-95a8-89295f581602",
+  "cleanupAttempted": true,
+  "scenarios": [
+    {
+      "id": "adv-1-create-valid",
+      "desc": "POST banner imageUrl=\"https://example.com/banner.png\"",
+      "request": {
+        "method": "POST",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners",
+        "body": {
+          "imageUrl": "https://example.com/banner.png",
+          "status": "active",
+          "sortOrder": 0
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": "{\"banner\":{\"id\":\"124147e2-8855-42c7-95a8-89295f581602\",\"storeId\":\"e4d711db-dddd-4749-9a4c-0c2aed2f4f77\",\"imageUrl\":\"https://example.com/banner.png\",\"imageFileAssetId\":null,\"status\":\"active\",\"sortOrder\":0,\"createdAt\":\"2026-05-19T20:57:42.756Z\",\"updatedAt\":\"2026-05-19T20:57:42.756Z\"}}"
+      },
+      "expected": "HTTP 201",
+      "elapsedMs": 22,
+      "pass": "124147e2-8855-42c7-95a8-89295f581602",
+      "bannerId": "124147e2-8855-42c7-95a8-89295f581602"
+    },
+    {
+      "id": "adv-2-create-javascript",
+      "desc": "POST banner imageUrl=\"javascript:alert(1)\"",
+      "request": {
+        "method": "POST",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners",
+        "body": {
+          "imageUrl": "javascript:alert(1)",
+          "status": "active",
+          "sortOrder": 0
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 10,
+      "pass": true,
+      "bannerId": null
+    },
+    {
+      "id": "adv-3-create-data",
+      "desc": "POST banner imageUrl=\"data:image/png;base64,iVBORw0KGgo...\"",
+      "request": {
+        "method": "POST",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners",
+        "body": {
+          "imageUrl": "data:image/png;base64,iVBORw0KGgo...",
+          "status": "active",
+          "sortOrder": 0
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 8,
+      "pass": true,
+      "bannerId": null
+    },
+    {
+      "id": "adv-4-create-not-url",
+      "desc": "POST banner imageUrl=\"not-a-url\"",
+      "request": {
+        "method": "POST",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners",
+        "body": {
+          "imageUrl": "not-a-url",
+          "status": "active",
+          "sortOrder": 0
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 8,
+      "pass": true,
+      "bannerId": null
+    },
+    {
+      "id": "adv-5-create-ftp",
+      "desc": "POST banner imageUrl=\"ftp://example.com/x.png\"",
+      "request": {
+        "method": "POST",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners",
+        "body": {
+          "imageUrl": "ftp://example.com/x.png",
+          "status": "active",
+          "sortOrder": 0
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 34,
+      "pass": true,
+      "bannerId": null
+    },
+    {
+      "id": "adv-6a-patch-javascript",
+      "desc": "PATCH banner 124147e2… imageUrl=\"javascript:alert(1)\"",
+      "request": {
+        "method": "PATCH",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners/124147e2-8855-42c7-95a8-89295f581602",
+        "body": {
+          "imageUrl": "javascript:alert(1)"
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 19,
+      "pass": true
+    },
+    {
+      "id": "adv-6b-patch-data",
+      "desc": "PATCH banner 124147e2… imageUrl=\"data:image/png;base64,xxx\"",
+      "request": {
+        "method": "PATCH",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners/124147e2-8855-42c7-95a8-89295f581602",
+        "body": {
+          "imageUrl": "data:image/png;base64,xxx"
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 8,
+      "pass": true
+    },
+    {
+      "id": "adv-6c-patch-not-url",
+      "desc": "PATCH banner 124147e2… imageUrl=\"not-a-url\"",
+      "request": {
+        "method": "PATCH",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners/124147e2-8855-42c7-95a8-89295f581602",
+        "body": {
+          "imageUrl": "not-a-url"
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 9,
+      "pass": true
+    },
+    {
+      "id": "adv-6d-patch-ftp",
+      "desc": "PATCH banner 124147e2… imageUrl=\"ftp://example.com/x.png\"",
+      "request": {
+        "method": "PATCH",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners/124147e2-8855-42c7-95a8-89295f581602",
+        "body": {
+          "imageUrl": "ftp://example.com/x.png"
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": "{\"message\":\"imageUrl must be a valid http(s) URL\",\"error\":\"Bad Request\",\"statusCode\":400}"
+      },
+      "expected": "HTTP 400 with imageUrl validation error",
+      "elapsedMs": 9,
+      "pass": true
+    },
+    {
+      "id": "adv-7-patch-valid",
+      "desc": "PATCH banner 124147e2… imageUrl=\"https://example.com/banner2.png\"",
+      "request": {
+        "method": "PATCH",
+        "url": "https://staging.maksimfrelikh.ru/api/stores/e4d711db-dddd-4749-9a4c-0c2aed2f4f77/advertising/banners/124147e2-8855-42c7-95a8-89295f581602",
+        "body": {
+          "imageUrl": "https://example.com/banner2.png"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": "{\"banner\":{\"id\":\"124147e2-8855-42c7-95a8-89295f581602\",\"storeId\":\"e4d711db-dddd-4749-9a4c-0c2aed2f4f77\",\"imageUrl\":\"https://example.com/banner2.png\",\"imageFileAssetId\":null,\"status\":\"active\",\"sortOrder\":0,\"createdAt\":\"2026-05-19T20:57:42.756Z\",\"updatedAt\":\"2026-05-19T20:57:42.940Z\"}}"
+      },
+      "expected": "HTTP 200",
+      "elapsedMs": 13,
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "windowMinutes": 2,
+  "sessionHitsCount": 1,
+  "ratePerMin": 0.5,
+  "sampleHits": [
+    {
+      "t": 1779224499054,
+      "method": "GET",
+      "url": "https://staging.maksimfrelikh.ru/api/auth/session"
+    }
+  ],
+  "rawHits": [
+    {
+      "t": 1779224499054,
+      "method": "GET",
+      "url": "https://staging.maksimfrelikh.ru/api/auth/session"
+    }
+  ]
+}
