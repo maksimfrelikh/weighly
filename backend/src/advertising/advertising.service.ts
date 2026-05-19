@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { BannerStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { validateBannerImageUrl } from './image-url.util';
 
 export type RequestContext = {
   ipAddress?: string;
@@ -215,10 +216,11 @@ export class AdvertisingService {
   }
 
   private requireImageUrl(value: string): string {
-    if (typeof value !== 'string' || value.trim().length === 0) {
-      throw new BadRequestException('imageUrl is required');
+    const result = validateBannerImageUrl(value);
+    if (!result.valid) {
+      throw new BadRequestException(result.reason);
     }
-    return value.trim();
+    return result.value;
   }
 
   private requireBannerStatus(status: string): BannerStatus {
