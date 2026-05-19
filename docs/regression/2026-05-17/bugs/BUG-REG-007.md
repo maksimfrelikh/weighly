@@ -1,5 +1,14 @@
 # BUG-REG-007: Operator на direct `/users` URL получает Dashboard вместо отказа/редиректа
 
+## Status: CLOSED — duplicate (2026-05-19)
+
+Закрыт как дубликат. Superset покрытия:
+- **BUG-REG-008** — тот же silent fallback на множестве admin-only / foreign-store URL под operator
+- **BUG-REG-011** — то же поведение под admin role
+- **BUG-REG-012** — дальнейшее расширение admin-only кейсов
+
+Любое исправление 008 / 011 / 012 закрывает и 007. Оригинальный контекст ниже сохранён для истории.
+
 - Severity: low
 - Area: rbac
 - Role: operator
