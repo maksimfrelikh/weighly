@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { CascadeArchiveService, type CascadeSummary } from '../shared/cascade-archive.service';
 import type { AuthenticatedUser } from '../auth/auth.types';
 
 export type RequestContext = {
@@ -35,6 +36,7 @@ export class StoresService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogs: AuditLogService,
+    private readonly cascadeArchive: CascadeArchiveService,
   ) {}
 
   async listVisibleStores(user: AuthenticatedUser) {
@@ -237,31 +239,57 @@ export class StoresService {
       throw new BadRequestException('At least one store field is required');
     }
 
+    const isCascadeArchive = data.status === 'archived' && store.status !== 'archived';
+
     try {
-      const updatedStore = await this.prisma.$transaction(async (tx) => {
-        const updated = await tx.store.update({
-          where: { id: store.id },
-          data,
-        });
+      const { updated, cascadeSummary } = await this.prisma.$transaction(
+        async (tx) => {
+          const updatedRow = await tx.store.update({
+            where: { id: store.id },
+            data,
+          });
 
-        await this.auditLogs.create(tx, {
-          data: {
-            actorUserId,
-            action: 'store.updated',
-            entityType: 'Store',
-            entityId: store.id,
-            storeId: store.id,
-            beforeData: this.toStoreAuditData(store),
-            afterData: this.toStoreAuditData(updated),
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent,
-          },
-        });
+          let summary: CascadeSummary | null = null;
+          if (isCascadeArchive) {
+            summary = await this.cascadeArchive.cascadeStoreArchive(tx, store.id, actorUserId, context);
+          }
 
-        return updated;
-      });
+          await this.auditLogs.create(tx, {
+            data: {
+              actorUserId,
+              action: isCascadeArchive ? 'store.archived' : 'store.updated',
+              entityType: 'Store',
+              entityId: store.id,
+              storeId: store.id,
+              beforeData: this.toStoreAuditData(store),
+              afterData: this.toStoreAuditData(updatedRow),
+              metadata: summary
+                ? {
+                    cascade: {
+                      correlationId: summary.correlationId,
+                      counts: {
+                        categories: summary.categories.length,
+                        placements: summary.placements.length,
+                        prices: summary.prices.length,
+                        banners: summary.banners.length,
+                        scaleDevices: summary.scaleDevices.length,
+                      },
+                    },
+                  }
+                : undefined,
+              ipAddress: context.ipAddress,
+              userAgent: context.userAgent,
+            },
+          });
 
-      return { store: this.toStoreResponse(updatedStore) };
+          return { updated: updatedRow, cascadeSummary: summary };
+        },
+        isCascadeArchive
+          ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+          : undefined,
+      );
+
+      return { store: this.toStoreResponse(updated), cascade: cascadeSummary };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException('Store code already exists');

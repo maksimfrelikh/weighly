@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { CascadeArchiveService, type CascadeSummary } from '../shared/cascade-archive.service';
 
 export type RequestContext = {
   ipAddress?: string;
@@ -51,6 +52,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogs: AuditLogService,
+    private readonly cascadeArchive: CascadeArchiveService,
   ) {}
 
   async listProducts(input: ListProductsInput) {
@@ -184,34 +186,63 @@ export class ProductsService {
 
     const activePlacementCount = await this.countActivePlacements(product.id);
     const warning = activePlacementCount > 0 ? this.getUsedProductWarning(activePlacementCount) : null;
+    const isCascadeArchive = data.status === 'archived' && product.status !== 'archived';
 
     try {
-      const updatedProduct = await this.prisma.$transaction(async (tx) => {
-        const updated = await tx.product.update({
-          where: { id: product.id },
-          data,
-        });
+      const { updated: updatedProduct, cascadeSummary } = await this.prisma.$transaction(
+        async (tx) => {
+          const updatedRow = await tx.product.update({
+            where: { id: product.id },
+            data,
+          });
 
-        await this.auditLogs.create(tx, {
-          data: {
-            actorUserId,
-            action: 'product.updated',
-            entityType: 'Product',
-            entityId: product.id,
-            beforeData: this.toProductAuditData(product),
-            afterData: this.toProductAuditData(updated),
-            metadata: warning ? { warning } : undefined,
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent,
-          },
-        });
+          let summary: CascadeSummary | null = null;
+          if (isCascadeArchive) {
+            summary = await this.cascadeArchive.cascadeProductArchive(tx, product.id, actorUserId, context);
+          }
 
-        return updated;
-      });
+          await this.auditLogs.create(tx, {
+            data: {
+              actorUserId,
+              action: isCascadeArchive ? 'product.archived' : 'product.updated',
+              entityType: 'Product',
+              entityId: product.id,
+              beforeData: this.toProductAuditData(product),
+              afterData: this.toProductAuditData(updatedRow),
+              metadata:
+                warning || summary
+                  ? {
+                      ...(warning ? { warning } : {}),
+                      ...(summary
+                        ? {
+                            cascade: {
+                              correlationId: summary.correlationId,
+                              counts: {
+                                placements: summary.placements.length,
+                                prices: summary.prices.length,
+                              },
+                            },
+                          }
+                        : {}),
+                    }
+                  : undefined,
+              ipAddress: context.ipAddress,
+              userAgent: context.userAgent,
+            },
+          });
 
+          return { updated: updatedRow, cascadeSummary: summary };
+        },
+        isCascadeArchive
+          ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+          : undefined,
+      );
+
+      const finalActivePlacementCount = isCascadeArchive ? 0 : activePlacementCount;
       return {
-        product: this.toProductResponse(updatedProduct, activePlacementCount),
+        product: this.toProductResponse(updatedProduct, finalActivePlacementCount),
         warning,
+        cascade: cascadeSummary,
       };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
