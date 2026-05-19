@@ -1,0 +1,6 @@
+// Random 43-char base64url strings without any token/secret keyword
+// MUST NOT trigger the scale-device-api-token rule (the keyword filter
+// is what gates the entropy check).
+request_id: gsh794Usyvje3dFZjriQqGYht3tO2ftBs_UsLvldAKA
+trace_id: mx9okRnXbNEWf1B5BhJBG_XvCDSG1zUPKpaj-pEdKdM
+correlation: uSpY02iBZDYQ9_9d0B3aqkf9I7-JC1TP2UroqOv9Uzs

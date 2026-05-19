@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# scale-admin pre-commit hook — secret scanner (BUG-REG-034 Stream B).
+#
+# Scans the STAGED diff for secret patterns (scale device API tokens,
+# hardcoded passwords, and gitleaks' default rule library: AWS / GCP / Azure /
+# GitHub / Slack PATs, JWT, PEM keys, generic high-entropy strings).
+#
+# Bypass (NOT recommended for shared branches):
+#   git commit --no-verify
+#
+# Activate this hook (one-time after `git clone`):
+#   ./scripts/install-hooks.sh
+
+set -e
+
+repo_root="$(git rev-parse --show-toplevel)"
+config="${repo_root}/.gitleaks.toml"
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  cat >&2 <<'MSG'
+
+scale-admin pre-commit: gitleaks not found on PATH.
+
+Install:
+  Ubuntu/Debian:  sudo apt-get install gitleaks
+  macOS (brew):   brew install gitleaks
+  Other:          https://github.com/gitleaks/gitleaks/releases
+
+One-time bypass (NOT recommended for shared branches):
+  git commit --no-verify
+
+MSG
+  exit 1
+fi
+
+if [[ ! -f "$config" ]]; then
+  echo "scale-admin pre-commit: $config not found." >&2
+  exit 1
+fi
+
+# `protect --staged` scans only the staged diff (faster + same scope as the
+# commit). Kept over `git --staged` for compatibility with gitleaks 8.16
+# (Ubuntu apt) — the `git` subcommand only landed in 8.18.
+if ! gitleaks protect \
+  --staged \
+  --verbose \
+  --redact \
+  --no-banner \
+  --config "$config"; then
+
+  cat >&2 <<'MSG'
+
+scale-admin pre-commit: gitleaks flagged secrets in staged content.
+Review the report above, remove the offending values, and re-stage.
+
+If this is a false positive, prefer one of:
+  - Add an allowlist entry in .gitleaks.toml (rule-specific or global).
+  - Mark the line with a trailing `gitleaks:allow` comment.
+
+Last-resort bypass (NOT recommended for shared branches):
+  git commit --no-verify
+
+MSG
+  exit 1
+fi
+
+exit 0

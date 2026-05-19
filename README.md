@@ -179,6 +179,34 @@ local Docker override files
 
 Sensitive local files are intentionally kept outside git.
 
+### Pre-commit secret scanner (BUG-REG-034 Stream B)
+
+A gitleaks-based pre-commit hook blocks accidental commits of scale device
+API tokens (43-char base64url from `createScaleApiToken()`), hardcoded
+password literals, and gitleaks' default library (AWS / GCP / Azure / GitHub
+/ Slack / JWT / PEM / generic high-entropy).
+
+One-time setup after `git clone`:
+
+```bash
+# 1. install gitleaks
+sudo apt-get install gitleaks     # Ubuntu/Debian (>= 24.04)
+brew install gitleaks             # macOS
+# or: https://github.com/gitleaks/gitleaks/releases
+
+# 2. activate the repo-tracked hook
+./scripts/install-hooks.sh
+```
+
+Hook entry point: `.githooks/pre-commit` · Config: `.gitleaks.toml` ·
+Rule tests: `./scripts/test-secret-hook.sh`.
+
+Bypass (last resort, NOT recommended for shared branches):
+
+```bash
+git commit --no-verify
+```
+
 ## Public preview on VPS
 
 For ad-hoc public preview on the VPS, use a local ignored `docker-compose.override.yml`.

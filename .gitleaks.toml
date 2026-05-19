@@ -1,0 +1,73 @@
+# scale-admin gitleaks config
+# Scanner: https://github.com/gitleaks/gitleaks
+# Hook entry point: .githooks/pre-commit
+# Rule tests:        scripts/test-secret-hook.sh
+#
+# Inherits gitleaks' default ruleset (AWS / GCP / Azure / GitHub / GitLab /
+# Slack PATs, PEM private keys, generic high-entropy + JWT, etc.) and layers
+# scale-admin-specific rules on top.
+
+title = "scale-admin"
+
+[extend]
+useDefault = true
+
+# -----------------------------------------------------------------------------
+# Custom rules
+# -----------------------------------------------------------------------------
+
+# Scale device API token.
+# Format: randomBytes(32).toString('base64url')  →  43 chars of [A-Za-z0-9_-].
+# Source of truth: backend/src/scales/scale-token.util.ts (createScaleApiToken).
+# Pre-incident leak: BUG-REG-034 — 3 valid tokens checked into untracked
+# evidence/block-06/api-report.json. Stream A rotated them; Stream B (this
+# rule) blocks recurrence at commit time.
+[[rules]]
+id = "scale-device-api-token"
+description = "Scale device API token (43-char base64url; see scale-token.util.ts)"
+regex = '''[A-Za-z0-9_\-]{43}'''
+keywords = [
+  "apitoken",
+  "api_token",
+  "x-scale-api-token",
+  "scaleapitoken",
+  "scale_api_token",
+]
+entropy = 4.0
+
+# Hardcoded password literal assigned in source / config / fixtures.
+# Catches the BUG-REG-034 Stream A leak shape: `pd: "<real-password>"` or
+# `QA_PASSWORD='<real-password>'` in trace JSON and helper scripts.
+[[rules]]
+id = "hardcoded-password-literal"
+description = "Hardcoded password-like literal assigned in source or config"
+regex = '''(?i)\b(?:password|passwd|pwd)\s*[:=]\s*["']([^"'\s]{8,})["']'''
+keywords = ["password", "passwd", "pwd"]
+secretGroup = 1
+entropy = 3.5
+
+  [rules.allowlist]
+  description = "obvious placeholders, env interpolation, kebab/snake-case fixture stand-ins"
+  regexes = [
+    # Pure placeholder tokens: ***, xxx, REDACTED, <password>, placeholder, change_me, dummy, fake, todo, fixme, ...
+    '''(?i)["'](?:\*{3,}|x{3,}|REDACTED|<password>|<passwd>|placeholder|example|sample|change[-_]?me|your[-_ ]password|dummy|fake|todo|fixme)["']''',
+    # Env-var interpolation: "${ADMIN_PASSWORD}", "$PASSWORD"
+    '''["'](?:\$\{[^}]+\}|\$[A-Z][A-Z0-9_]+)["']''',
+    # All-lowercase kebab/snake-case multi-word stand-ins like "password-secret", "test_password_value"
+    '''(?i)["'][a-z]+(?:[-_][a-z]+){1,5}["']''',
+  ]
+
+# -----------------------------------------------------------------------------
+# Global allowlist
+# -----------------------------------------------------------------------------
+
+[allowlist]
+description = "scale-admin global allowlist — generated artefacts, lockfiles, and rule-test fixtures"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)\.git/''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)\.gitleaks\.toml$''',
+  '''(^|/)\.gitleaks-tests/''',
+]
