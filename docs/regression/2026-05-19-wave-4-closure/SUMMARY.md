@@ -111,6 +111,18 @@ table: `blocks/BLOCK-Smoke-wave-4.md`.
    assumed stability — confirmed inaccurate. This run's helper
    (`scripts/helpers/staging.cjs`) re-fetches the CSRF token
    immediately before every mutating request.
+   — duplicate of BUG-REG-037 (cross-tab moratorium), no new stub.
+
+### Side-finding stubs
+
+Findings #1–4 opened as BUG-REG stubs under `bugs/`:
+
+- [BUG-REG-044](bugs/BUG-REG-044-qa-admin-staging-unseeded.md) — `qa-admin@example.com` not seeded on staging [low/backlog]
+- [BUG-REG-045](bugs/BUG-REG-045-manager-agents-advertising-route-mismatch.md) — Manager AGENTS.md §6.2 advertising route shape drift [low/backlog]
+- [BUG-REG-046](bugs/BUG-REG-046-invite-delete-endpoint-missing.md) — No DELETE for invites; admin cannot cancel [medium/backlog]
+- [BUG-REG-047](bugs/BUG-REG-047-api-version-endpoint-missing.md) — No `/api/version` endpoint for deployed-build identification [low/backlog]
+
+Finding #5 (CSRF) is a duplicate of BUG-REG-037 (cross-tab moratorium); no new stub.
 
 ## Restore / hygiene
 
