@@ -290,6 +290,52 @@ export class UsersService {
     };
   }
 
+  async cancelInvite(inviteId: string, actorUserId: string, context: RequestContext) {
+    if (!inviteId) {
+      throw new BadRequestException('Invite id is required');
+    }
+
+    const invite = await this.prisma.userInvite.findUnique({ where: { id: inviteId } });
+    if (!invite) {
+      throw new NotFoundException('Invite not found');
+    }
+    if (invite.acceptedAt) {
+      throw new ConflictException('Accepted invites cannot be cancelled');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userInvite.delete({ where: { id: invite.id } });
+
+      await this.auditLogs.create(tx, {
+        data: {
+          actorUserId,
+          action: 'user.invite.cancelled',
+          entityType: 'UserInvite',
+          entityId: invite.id,
+          beforeData: {
+            email: invite.email,
+            role: invite.role,
+            expiresAt: invite.expiresAt.toISOString(),
+            invitedByUserId: invite.invitedByUserId,
+            createdAt: invite.createdAt.toISOString(),
+          },
+          metadata: {
+            inviteId: invite.id,
+            targetEmail: invite.email,
+            cancelledByUserId: actorUserId,
+          },
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        },
+      });
+    });
+
+    return {
+      inviteId: invite.id,
+      cancelled: true,
+    };
+  }
+
   async softDeleteUser(userId: string, actorUserId: string, context: RequestContext) {
     if (userId === actorUserId) {
       throw new ConflictException('Admins cannot delete their own user');
