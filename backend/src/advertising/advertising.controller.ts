@@ -11,6 +11,8 @@ import { AdvertisingService } from './advertising.service';
 
 type ListBannersQuery = {
   status?: string;
+  limit?: string;
+  offset?: string;
 };
 
 type BannerBody = {
@@ -37,7 +39,11 @@ export class AdvertisingController {
 
   @Get()
   listBanners(@Param('storeId') storeId: string, @Query() query: ListBannersQuery) {
-    return this.advertisingService.listBanners(storeId, { status: query.status });
+    return this.advertisingService.listBanners(storeId, {
+      status: query.status,
+      limit: query.limit,
+      offset: query.offset,
+    });
   }
 
   @Post()

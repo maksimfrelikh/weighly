@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
 import { CascadeArchiveService, type CascadeSummary } from '../shared/cascade-archive.service';
+import { buildMeta, parseLimit, parseOffset } from '../shared/pagination';
 
 export type RequestContext = {
   ipAddress?: string;
@@ -27,6 +28,8 @@ export type UpdateProductInput = Partial<CreateProductInput>;
 export type ListProductsInput = {
   search?: string;
   status?: string;
+  limit?: string;
+  offset?: string;
   take?: string;
   skip?: string;
 };
@@ -58,8 +61,8 @@ export class ProductsService {
   async listProducts(input: ListProductsInput) {
     const search = this.normalizeOptionalString(input.search);
     const status = input.status ? this.requireProductStatus(input.status) : undefined;
-    const take = this.parsePaginationNumber(input.take, 50, 1, 100);
-    const skip = this.parsePaginationNumber(input.skip, 0, 0, 10_000);
+    const limit = parseLimit(input.limit ?? input.take);
+    const offset = parseOffset(input.offset ?? input.skip);
 
     const where: Prisma.ProductWhereInput = {
       ...(status ? { status } : {}),
@@ -80,17 +83,15 @@ export class ProductsService {
       this.prisma.product.findMany({
         where,
         orderBy: [{ name: 'asc' }, { defaultPluCode: 'asc' }],
-        take,
-        skip,
+        take: limit,
+        skip: offset,
       }),
       this.prisma.product.count({ where }),
     ]);
 
     return {
-      products: products.map((product) => this.toProductResponse(product, 0)),
-      total,
-      take,
-      skip,
+      data: products.map((product) => this.toProductResponse(product, 0)),
+      meta: buildMeta(total, limit, offset),
     };
   }
 
@@ -321,19 +322,6 @@ export class ProductsService {
   private normalizeOptionalString(value: string | undefined): string | null {
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     return normalizedValue || null;
-  }
-
-  private parsePaginationNumber(value: string | undefined, defaultValue: number, min: number, max: number): number {
-    if (value === undefined || value === '') {
-      return defaultValue;
-    }
-
-    const parsedValue = Number(value);
-    if (!Number.isInteger(parsedValue) || parsedValue < min || parsedValue > max) {
-      throw new BadRequestException(`Pagination value must be an integer from ${min} to ${max}`);
-    }
-
-    return parsedValue;
   }
 
   private getUsedProductWarning(activePlacementCount: number) {

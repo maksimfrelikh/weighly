@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, ScaleSyncStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildMeta, parseLimit, parseOffset, type PaginationMeta } from '../shared/pagination';
 
 type LogsQueryInput = {
   storeId?: string;
@@ -10,18 +11,27 @@ type LogsQueryInput = {
   dateFrom?: string;
   dateTo?: string;
   limit?: string;
+  offset?: string;
 };
 
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100;
 const scaleSyncStatuses = new Set<string>(Object.values(ScaleSyncStatus));
+
+type AuditLogResponse = ReturnType<LogsService['toAuditLogResponse']>;
+type SyncLogResponse = ReturnType<LogsService['toScaleSyncLogResponse']>;
+
+type LogsEnvelope = {
+  auditLogs: { data: AuditLogResponse[]; meta: PaginationMeta };
+  scaleSyncLogs: { data: SyncLogResponse[]; meta: PaginationMeta };
+  filters: ReturnType<LogsService['echoFilters']>;
+};
 
 @Injectable()
 export class LogsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listGlobalLogs(query: LogsQueryInput) {
-    const limit = this.parseLimit(query.limit);
+  async listGlobalLogs(query: LogsQueryInput): Promise<LogsEnvelope> {
+    const limit = parseLimit(query.limit);
+    const offset = parseOffset(query.offset);
     const createdAt = this.buildDateFilter(query.dateFrom, query.dateTo);
 
     const auditWhere: Prisma.AuditLogWhereInput = {
@@ -37,30 +47,41 @@ export class LogsService {
       ...(createdAt ? { createdAt } : {}),
     };
 
-    const [auditLogs, syncLogs] = await Promise.all([
+    const [auditLogs, auditTotal, syncLogs, syncTotal] = await Promise.all([
       this.prisma.auditLog.findMany({
         where: auditWhere,
         orderBy: { createdAt: 'desc' },
+        skip: offset,
         take: limit,
         select: this.auditLogSelect(),
       }),
+      this.prisma.auditLog.count({ where: auditWhere }),
       this.prisma.scaleSyncLog.findMany({
         where: syncWhere,
         orderBy: { createdAt: 'desc' },
+        skip: offset,
         take: limit,
         select: this.syncLogSelect(),
       }),
+      this.prisma.scaleSyncLog.count({ where: syncWhere }),
     ]);
 
     return {
-      auditLogs: auditLogs.map((log) => this.toAuditLogResponse(log)),
-      scaleSyncLogs: syncLogs.map((log) => this.toScaleSyncLogResponse(log)),
-      filters: this.echoFilters(query, limit),
+      auditLogs: {
+        data: auditLogs.map((log) => this.toAuditLogResponse(log)),
+        meta: buildMeta(auditTotal, limit, offset),
+      },
+      scaleSyncLogs: {
+        data: syncLogs.map((log) => this.toScaleSyncLogResponse(log)),
+        meta: buildMeta(syncTotal, limit, offset),
+      },
+      filters: this.echoFilters(query, limit, offset),
     };
   }
 
-  async listStoreLogs(storeId: string, query: LogsQueryInput) {
-    const limit = this.parseLimit(query.limit);
+  async listStoreLogs(storeId: string, query: LogsQueryInput): Promise<LogsEnvelope & { storeId: string }> {
+    const limit = parseLimit(query.limit);
+    const offset = parseOffset(query.offset);
     const createdAt = this.buildDateFilter(query.dateFrom, query.dateTo);
 
     const auditWhere: Prisma.AuditLogWhereInput = {
@@ -76,26 +97,36 @@ export class LogsService {
       ...(createdAt ? { createdAt } : {}),
     };
 
-    const [auditLogs, syncLogs] = await Promise.all([
+    const [auditLogs, auditTotal, syncLogs, syncTotal] = await Promise.all([
       this.prisma.auditLog.findMany({
         where: auditWhere,
         orderBy: { createdAt: 'desc' },
+        skip: offset,
         take: limit,
         select: this.auditLogSelect(),
       }),
+      this.prisma.auditLog.count({ where: auditWhere }),
       this.prisma.scaleSyncLog.findMany({
         where: syncWhere,
         orderBy: { createdAt: 'desc' },
+        skip: offset,
         take: limit,
         select: this.syncLogSelect(),
       }),
+      this.prisma.scaleSyncLog.count({ where: syncWhere }),
     ]);
 
     return {
       storeId,
-      auditLogs: auditLogs.map((log) => this.toAuditLogResponse(log)),
-      scaleSyncLogs: syncLogs.map((log) => this.toScaleSyncLogResponse(log)),
-      filters: this.echoFilters(query, limit),
+      auditLogs: {
+        data: auditLogs.map((log) => this.toAuditLogResponse(log)),
+        meta: buildMeta(auditTotal, limit, offset),
+      },
+      scaleSyncLogs: {
+        data: syncLogs.map((log) => this.toScaleSyncLogResponse(log)),
+        meta: buildMeta(syncTotal, limit, offset),
+      },
+      filters: this.echoFilters(query, limit, offset),
     };
   }
 
@@ -159,13 +190,6 @@ export class LogsService {
     return status && scaleSyncStatuses.has(status) ? { status: status as ScaleSyncStatus } : {};
   }
 
-  private parseLimit(value: string | undefined) {
-    if (!value) return DEFAULT_LIMIT;
-    const parsed = Number.parseInt(value, 10);
-    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIMIT;
-    return Math.min(parsed, MAX_LIMIT);
-  }
-
   private buildDateFilter(dateFrom?: string, dateTo?: string): Prisma.DateTimeFilter | undefined {
     const filter: Prisma.DateTimeFilter = {};
     const from = this.parseDate(dateFrom, false);
@@ -185,7 +209,7 @@ export class LogsService {
     return date;
   }
 
-  private echoFilters(query: LogsQueryInput, limit: number) {
+  private echoFilters(query: LogsQueryInput, limit: number, offset: number) {
     return {
       storeId: query.storeId ?? null,
       entityType: query.entityType ?? null,
@@ -194,6 +218,7 @@ export class LogsService {
       dateFrom: query.dateFrom ?? null,
       dateTo: query.dateTo ?? null,
       limit,
+      offset,
     };
   }
 }

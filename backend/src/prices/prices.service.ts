@@ -3,6 +3,7 @@ import { PriceStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
 import { ALLOWED_CURRENCIES, AllowedCurrency } from '../shared/currency';
+import { buildMeta, parseLimit, parseOffset } from '../shared/pagination';
 
 export type RequestContext = {
   ipAddress?: string;
@@ -13,6 +14,8 @@ export type ListStorePricesInput = {
   search?: string;
   categoryId?: string;
   missingPrice?: string;
+  limit?: string;
+  offset?: string;
 };
 
 export type SetStoreProductPriceInput = {
@@ -143,9 +146,15 @@ export class PricesService {
         return haystack.includes(search);
       });
 
+    const limit = parseLimit(input.limit);
+    const offset = parseOffset(input.offset);
+    const total = items.length;
+    const pageItems = items.slice(offset, offset + limit);
+
     return {
       catalog: this.toCatalogResponse(catalog),
-      prices: items,
+      data: pageItems,
+      meta: buildMeta(total, limit, offset),
     };
   }
 

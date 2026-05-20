@@ -1,4 +1,5 @@
 import { backendApi } from '../../shared/api/backendApi';
+import type { PaginationMeta } from '../../shared/pagination/Pagination';
 
 export type AuditLogEntry = {
   id: string;
@@ -32,12 +33,13 @@ export type LogsFilters = {
   dateFrom?: string;
   dateTo?: string;
   limit?: number;
+  offset?: number;
 };
 
 export type LogsResponse = {
   storeId?: string;
-  auditLogs: AuditLogEntry[];
-  scaleSyncLogs: ScaleSyncLogEntry[];
+  auditLogs: { data: AuditLogEntry[]; meta: PaginationMeta };
+  scaleSyncLogs: { data: ScaleSyncLogEntry[]; meta: PaginationMeta };
   filters: {
     storeId: string | null;
     entityType: string | null;
@@ -46,6 +48,7 @@ export type LogsResponse = {
     dateFrom: string | null;
     dateTo: string | null;
     limit: number;
+    offset: number;
   };
 };
 
@@ -58,6 +61,7 @@ function buildQuery(filters: LogsFilters = {}) {
   if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
   if (filters.dateTo) params.set('dateTo', filters.dateTo);
   if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.offset) params.set('offset', String(filters.offset));
   const query = params.toString();
   return query ? `?${query}` : '';
 }

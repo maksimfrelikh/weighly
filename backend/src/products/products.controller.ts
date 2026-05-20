@@ -23,6 +23,8 @@ type ProductBody = {
 type ProductQuery = {
   search?: string;
   status?: string;
+  limit?: string;
+  offset?: string;
   take?: string;
   skip?: string;
 };

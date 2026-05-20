@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { BannerStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { buildMeta, parseLimit, parseOffset } from '../shared/pagination';
 import { validateBannerImageUrl } from './image-url.util';
 
 export type RequestContext = {
@@ -11,6 +12,8 @@ export type RequestContext = {
 
 export type ListBannersInput = {
   status?: string;
+  limit?: string;
+  offset?: string;
 };
 
 export type CreateBannerInput = {
@@ -55,12 +58,24 @@ export class AdvertisingService {
 
   async listBanners(storeId: string, input: ListBannersInput = {}) {
     const status = input.status ? this.requireBannerStatus(input.status) : undefined;
-    const banners = await this.prisma.advertisingBanner.findMany({
-      where: { storeId, ...(status ? { status } : {}) },
-      orderBy: [{ status: 'asc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
-    });
+    const limit = parseLimit(input.limit);
+    const offset = parseOffset(input.offset);
+    const where: Prisma.AdvertisingBannerWhereInput = { storeId, ...(status ? { status } : {}) };
 
-    return { banners: banners.map((banner) => this.toBannerResponse(banner)) };
+    const [banners, total] = await Promise.all([
+      this.prisma.advertisingBanner.findMany({
+        where,
+        orderBy: [{ status: 'asc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.advertisingBanner.count({ where }),
+    ]);
+
+    return {
+      data: banners.map((banner) => this.toBannerResponse(banner)),
+      meta: buildMeta(total, limit, offset),
+    };
   }
 
   async getBanner(storeId: string, bannerId: string) {

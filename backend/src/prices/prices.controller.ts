@@ -13,6 +13,8 @@ type ListPricesQuery = {
   search?: string;
   categoryId?: string;
   missingPrice?: string;
+  limit?: string;
+  offset?: string;
 };
 
 type SetPriceBody = {
@@ -34,6 +36,8 @@ export class PricesController {
       search: query.search,
       categoryId: query.categoryId,
       missingPrice: query.missingPrice,
+      limit: query.limit,
+      offset: query.offset,
     });
   }
 
