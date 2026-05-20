@@ -41,6 +41,11 @@ export class PricesController {
     });
   }
 
+  @Get('categories')
+  listStorePriceCategories(@Param('storeId') storeId: string) {
+    return this.pricesService.listStorePriceCategories(storeId);
+  }
+
   @Put()
   setStoreProductPrice(
     @Param('storeId') storeId: string,
