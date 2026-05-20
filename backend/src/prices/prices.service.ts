@@ -49,6 +49,24 @@ export class PricesService {
     private readonly auditLogs: AuditLogService,
   ) {}
 
+  async listStorePriceCategories(storeId: string) {
+    const catalog = await this.findActiveCatalog(storeId);
+    return this.prisma.category.findMany({
+      where: {
+        catalogId: catalog.id,
+        status: 'active',
+        placements: {
+          some: {
+            status: 'active',
+            product: { status: 'active' },
+          },
+        },
+      },
+      select: { id: true, name: true, shortName: true, status: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async listStorePrices(storeId: string, input: ListStorePricesInput) {
     const catalog = await this.findActiveCatalog(storeId);
     const search = this.normalizeOptionalString(input.search)?.toLowerCase();

@@ -52,6 +52,7 @@ import {
 } from './features/logs/logsApi';
 import { Pagination, type PaginationMeta } from './shared/pagination/Pagination';
 import {
+  useListStorePriceCategoriesQuery,
   useListStorePricesQuery,
   useUpdateStoreProductPriceMutation,
   type PriceRow,
@@ -1941,16 +1942,10 @@ function PricesTab({ storeId }: { storeId: string }) {
     limit,
     offset,
   });
-  const { data: unfilteredData } = useListStorePricesQuery({ storeId, limit: 200 });
+  const { data: categoryOptionsData } = useListStorePriceCategoriesQuery(storeId);
   const prices = data?.data ?? [];
   const pricesMeta = data?.meta ?? { total: 0, limit, offset };
-  const categoryOptions = useMemo(() => {
-    const byId = new Map<string, PriceRow['category']>();
-    for (const row of unfilteredData?.data ?? prices) {
-      byId.set(row.category.id, row.category);
-    }
-    return [...byId.values()].sort((first, second) => first.name.localeCompare(second.name));
-  }, [prices, unfilteredData?.data]);
+  const categoryOptions = categoryOptionsData ?? [];
   const errorMessage = error && 'message' in error ? error.message : null;
 
   return (

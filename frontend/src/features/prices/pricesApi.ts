@@ -108,6 +108,10 @@ export const pricesApi = backendApi.injectEndpoints({
       query: buildPriceQuery,
       providesTags: (_result, _error, { storeId }) => [{ type: 'Prices', id: storeId }],
     }),
+    listStorePriceCategories: builder.query<PriceCategory[], string>({
+      query: (storeId) => `/stores/${storeId}/prices/categories`,
+      providesTags: (_result, _error, storeId) => [{ type: 'Prices', id: storeId }],
+    }),
     updateStoreProductPrice: builder.mutation<{ price: StoreProductPrice }, UpdateStoreProductPriceRequest>({
       query: ({ storeId, productId, csrfToken, csrfHeaderName, ...body }) => ({
         url: `/stores/${storeId}/prices/${productId}`,
@@ -124,5 +128,6 @@ export const pricesApi = backendApi.injectEndpoints({
 
 export const {
   useListStorePricesQuery,
+  useListStorePriceCategoriesQuery,
   useUpdateStoreProductPriceMutation,
 } = pricesApi;
