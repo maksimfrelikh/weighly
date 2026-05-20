@@ -1,4 +1,5 @@
 import { backendApi } from '../../shared/api/backendApi';
+import type { PaginationMeta } from '../../shared/pagination/Pagination';
 import type { FileAsset } from '../products/productsApi';
 
 export type BannerStatus = 'active' | 'inactive' | 'archived';
@@ -42,13 +43,32 @@ type UploadBannerImageRequest = CsrfRequest & {
   file: File;
 };
 
+export type ListBannersQuery = {
+  storeId: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type AdvertisingBannersResponse = {
+  data: AdvertisingBanner[];
+  meta: PaginationMeta;
+};
+
+function buildBannersQuery({ limit, offset }: ListBannersQuery) {
+  const params = new URLSearchParams();
+  if (limit) params.set('limit', String(limit));
+  if (offset) params.set('offset', String(offset));
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
 export const advertisingApi = backendApi.injectEndpoints({
   endpoints: (builder) => ({
-    listAdvertisingBanners: builder.query<{ banners: AdvertisingBanner[] }, string>({
-      query: (storeId) => `/stores/${storeId}/advertising/banners`,
-      providesTags: (result, _error, storeId) => [
+    listAdvertisingBanners: builder.query<AdvertisingBannersResponse, ListBannersQuery>({
+      query: (params) => `/stores/${params.storeId}/advertising/banners${buildBannersQuery(params)}`,
+      providesTags: (result, _error, { storeId }) => [
         { type: 'AdvertisingBanners', id: `STORE-${storeId}` },
-        ...(result?.banners.map((banner) => ({ type: 'AdvertisingBanners' as const, id: banner.id })) ?? []),
+        ...(result?.data.map((banner) => ({ type: 'AdvertisingBanners' as const, id: banner.id })) ?? []),
       ],
     }),
     uploadBannerImage: builder.mutation<{ fileAsset: FileAsset }, UploadBannerImageRequest>({

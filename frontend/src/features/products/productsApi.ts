@@ -1,4 +1,5 @@
 import { backendApi } from '../../shared/api/backendApi';
+import type { PaginationMeta } from '../../shared/pagination/Pagination';
 
 export type ProductUnit = 'kg' | 'g' | 'piece';
 export type ProductStatus = 'active' | 'inactive' | 'archived';
@@ -55,8 +56,13 @@ export type ProductFormValues = {
 type ListProductsQuery = {
   search?: string;
   status?: ProductStatus | 'all';
-  take?: number;
-  skip?: number;
+  limit?: number;
+  offset?: number;
+};
+
+export type ProductsResponse = {
+  data: Product[];
+  meta: PaginationMeta;
 };
 
 type WriteProductRequest = ProductFormValues & {
@@ -78,19 +84,19 @@ type UploadProductImageRequest = {
 
 export const productsApi = backendApi.injectEndpoints({
   endpoints: (builder) => ({
-    listProducts: builder.query<{ products: Product[]; total: number; take: number; skip: number }, ListProductsQuery | void>({
+    listProducts: builder.query<ProductsResponse, ListProductsQuery | void>({
       query: (params) => ({
         url: '/products',
         params: {
           ...(params?.search ? { search: params.search } : {}),
           ...(params?.status && params.status !== 'all' ? { status: params.status } : {}),
-          ...(params?.take ? { take: String(params.take) } : {}),
-          ...(params?.skip ? { skip: String(params.skip) } : {}),
+          ...(params?.limit ? { limit: String(params.limit) } : {}),
+          ...(params?.offset ? { offset: String(params.offset) } : {}),
         },
       }),
       providesTags: (result) => [
         { type: 'Products', id: 'LIST' },
-        ...(result?.products.map((product) => ({ type: 'Products' as const, id: product.id })) ?? []),
+        ...(result?.data.map((product) => ({ type: 'Products' as const, id: product.id })) ?? []),
       ],
     }),
     getProduct: builder.query<{ product: Product }, string>({

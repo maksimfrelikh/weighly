@@ -14,6 +14,7 @@ type LogsQuery = {
   dateFrom?: string;
   dateTo?: string;
   limit?: string;
+  offset?: string;
 };
 
 @Controller()
@@ -43,6 +44,7 @@ export class LogsController {
       dateFrom: this.clean(query.dateFrom),
       dateTo: this.clean(query.dateTo),
       limit: this.clean(query.limit),
+      offset: this.clean(query.offset),
     };
   }
 

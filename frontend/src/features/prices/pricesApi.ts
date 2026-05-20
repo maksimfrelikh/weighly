@@ -1,5 +1,6 @@
 import { backendApi } from '../../shared/api/backendApi';
 import type { AllowedCurrency } from '../../shared/currency';
+import type { PaginationMeta } from '../../shared/pagination/Pagination';
 
 export type ProductUnit = 'kg' | 'g' | 'piece';
 export type ProductStatus = 'active' | 'inactive' | 'archived';
@@ -56,7 +57,8 @@ export type StorePricesResponse = {
     name: string;
     status: string;
   };
-  prices: PriceRow[];
+  data: PriceRow[];
+  meta: PaginationMeta;
 };
 
 export type StorePricesQuery = {
@@ -64,6 +66,8 @@ export type StorePricesQuery = {
   search?: string;
   categoryId?: string;
   missingPrice?: boolean | '';
+  limit?: number;
+  offset?: number;
 };
 
 type UpdateStoreProductPriceRequest = {
@@ -75,7 +79,7 @@ type UpdateStoreProductPriceRequest = {
   csrfHeaderName: string;
 };
 
-function buildPriceQuery({ storeId, search, categoryId, missingPrice }: StorePricesQuery) {
+function buildPriceQuery({ storeId, search, categoryId, missingPrice, limit, offset }: StorePricesQuery) {
   const params = new URLSearchParams();
   const trimmedSearch = search?.trim();
   if (trimmedSearch) {
@@ -86,6 +90,12 @@ function buildPriceQuery({ storeId, search, categoryId, missingPrice }: StorePri
   }
   if (typeof missingPrice === 'boolean') {
     params.set('missingPrice', String(missingPrice));
+  }
+  if (limit) {
+    params.set('limit', String(limit));
+  }
+  if (offset) {
+    params.set('offset', String(offset));
   }
 
   const queryString = params.toString();

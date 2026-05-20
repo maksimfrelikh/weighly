@@ -50,6 +50,7 @@ import {
   type LogsFilters,
   type ScaleSyncLogEntry,
 } from './features/logs/logsApi';
+import { Pagination, type PaginationMeta } from './shared/pagination/Pagination';
 import {
   useListStorePricesQuery,
   useUpdateStoreProductPriceMutation,
@@ -413,19 +414,37 @@ function LogsFiltersForm({
   );
 }
 
-function LogsTables({ auditLogs, scaleSyncLogs }: { auditLogs: AuditLogEntry[]; scaleSyncLogs: ScaleSyncLogEntry[] }) {
+function LogsTables({
+  auditLogs,
+  scaleSyncLogs,
+  onOffsetChange,
+  onLimitChange,
+}: {
+  auditLogs: { data: AuditLogEntry[]; meta: PaginationMeta };
+  scaleSyncLogs: { data: ScaleSyncLogEntry[]; meta: PaginationMeta };
+  onOffsetChange: (offset: number) => void;
+  onLimitChange: (limit: number) => void;
+}) {
+  const auditEntries = auditLogs.data;
+  const syncEntries = scaleSyncLogs.data;
   return (
     <div className="logs-grid">
       <section className="logs-card" aria-labelledby="audit-logs-title">
         <h4 id="audit-logs-title">AuditLog entries</h4>
-        {auditLogs.length === 0 ? <div className="empty-state">No audit logs for the selected filters.</div> : (
+        <Pagination
+          meta={auditLogs.meta}
+          onOffsetChange={onOffsetChange}
+          onLimitChange={onLimitChange}
+          label="audit logs"
+        />
+        {auditEntries.length === 0 ? <div className="empty-state">No audit logs for the selected filters.</div> : (
           <div className="logs-table-wrap">
             <table className="logs-table">
               <thead>
                 <tr><th>Time</th><th>Store</th><th>Actor</th><th>Entity</th><th>Action</th></tr>
               </thead>
               <tbody>
-                {auditLogs.map((log) => (
+                {auditEntries.map((log) => (
                   <tr key={log.id}>
                     <td>{formatDateTime(log.createdAt)}</td>
                     <td>{log.store ? `${log.store.code} · ${log.store.name}` : 'Global'}</td>
@@ -442,14 +461,20 @@ function LogsTables({ auditLogs, scaleSyncLogs }: { auditLogs: AuditLogEntry[]; 
 
       <section className="logs-card" aria-labelledby="sync-logs-title">
         <h4 id="sync-logs-title">ScaleSyncLog entries</h4>
-        {scaleSyncLogs.length === 0 ? <div className="empty-state">No scale sync logs for the selected filters.</div> : (
+        <Pagination
+          meta={scaleSyncLogs.meta}
+          onOffsetChange={onOffsetChange}
+          onLimitChange={onLimitChange}
+          label="sync logs"
+        />
+        {syncEntries.length === 0 ? <div className="empty-state">No scale sync logs for the selected filters.</div> : (
           <div className="logs-table-wrap">
             <table className="logs-table">
               <thead>
                 <tr><th>Time</th><th>Store</th><th>Scale</th><th>Status</th><th>Versions / error</th></tr>
               </thead>
               <tbody>
-                {scaleSyncLogs.map((log) => (
+                {syncEntries.map((log) => (
                   <tr key={log.id}>
                     <td>{formatDateTime(log.createdAt)}</td>
                     <td>{log.store ? `${log.store.code} · ${log.store.name}` : '—'}</td>
@@ -473,8 +498,21 @@ function LogsTables({ auditLogs, scaleSyncLogs }: { auditLogs: AuditLogEntry[]; 
 
 function GlobalLogsPage({ user }: { user: AuthUser }) {
   const [filters, setFilters] = useState<LogsFilters>({});
+  const [limit, setLimit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const handleFiltersChange = (next: LogsFilters) => {
+    setFilters(next);
+    setOffset(0);
+  };
+  const handleLimitChange = (next: number) => {
+    setLimit(next);
+    setOffset(0);
+  };
   const { data: storesData } = useListStoresQuery(undefined, { skip: user.role !== 'admin' });
-  const { data, error, isLoading, isFetching, refetch } = useListGlobalLogsQuery(filters, { skip: user.role !== 'admin' });
+  const { data, error, isLoading, isFetching, refetch } = useListGlobalLogsQuery(
+    { ...filters, limit, offset },
+    { skip: user.role !== 'admin' },
+  );
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (user.role !== 'admin') {
@@ -491,17 +529,37 @@ function GlobalLogsPage({ user }: { user: AuthUser }) {
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Refreshing...' : 'Refresh logs'}</button>
       </div>
-      <LogsFiltersForm filters={filters} onChange={setFilters} stores={storesData?.stores ?? []} showStoreFilter />
+      <LogsFiltersForm filters={filters} onChange={handleFiltersChange} stores={storesData?.stores ?? []} showStoreFilter />
       {isLoading && <div className="status status-loading">Loading logs...</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {data && <LogsTables auditLogs={data.auditLogs} scaleSyncLogs={data.scaleSyncLogs} />}
+      {data && (
+        <LogsTables
+          auditLogs={data.auditLogs}
+          scaleSyncLogs={data.scaleSyncLogs}
+          onOffsetChange={setOffset}
+          onLimitChange={handleLimitChange}
+        />
+      )}
     </section>
   );
 }
 
 function StoreLogsTab({ storeId }: { storeId: string }) {
   const [filters, setFilters] = useState<LogsFilters>({});
-  const { data, error, isLoading, isFetching, refetch } = useListStoreLogsQuery({ storeId, filters });
+  const [limit, setLimit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const handleFiltersChange = (next: LogsFilters) => {
+    setFilters(next);
+    setOffset(0);
+  };
+  const handleLimitChange = (next: number) => {
+    setLimit(next);
+    setOffset(0);
+  };
+  const { data, error, isLoading, isFetching, refetch } = useListStoreLogsQuery({
+    storeId,
+    filters: { ...filters, limit, offset },
+  });
   const errorMessage = error && 'message' in error ? error.message : null;
 
   return (
@@ -514,10 +572,17 @@ function StoreLogsTab({ storeId }: { storeId: string }) {
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Refreshing...' : 'Refresh logs'}</button>
       </div>
-      <LogsFiltersForm filters={filters} onChange={setFilters} />
+      <LogsFiltersForm filters={filters} onChange={handleFiltersChange} />
       {isLoading && <div className="status status-loading">Loading store logs...</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {data && <LogsTables auditLogs={data.auditLogs} scaleSyncLogs={data.scaleSyncLogs} />}
+      {data && (
+        <LogsTables
+          auditLogs={data.auditLogs}
+          scaleSyncLogs={data.scaleSyncLogs}
+          onOffsetChange={setOffset}
+          onLimitChange={handleLimitChange}
+        />
+      )}
     </section>
   );
 }
@@ -607,7 +672,13 @@ const supportedBannerExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
 const maxBannerImageBytes = 2 * 1024 * 1024;
 
 function AdvertisingTab({ storeId }: { storeId: string }) {
-  const { data, error, isLoading, isFetching, refetch } = useListAdvertisingBannersQuery(storeId);
+  const [limit, setLimit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const handleLimitChange = (next: number) => {
+    setLimit(next);
+    setOffset(0);
+  };
+  const { data, error, isLoading, isFetching, refetch } = useListAdvertisingBannersQuery({ storeId, limit, offset });
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [uploadBannerImage, { isLoading: uploading }] = useUploadBannerImageMutation();
   const [createBanner, { isLoading: creating }] = useCreateAdvertisingBannerMutation();
@@ -616,7 +687,8 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
   const [newStatus, setNewStatus] = useState<BannerStatus>('active');
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
-  const banners = data?.banners ?? [];
+  const banners = data?.data ?? [];
+  const bannersMeta = data?.meta ?? { total: 0, limit, offset };
   const busy = uploading || creating || changingStatus || reordering;
   const listError = error && 'message' in error ? error.message : null;
 
@@ -672,7 +744,7 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
         imageUrl: uploadResponse.fileAsset.publicUrl,
         imageFileAssetId: uploadResponse.fileAsset.id,
         status: newStatus,
-        sortOrder: banners.length,
+        sortOrder: bannersMeta.total,
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
@@ -765,6 +837,8 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
 
       {!isLoading && banners.length === 0 && <div className="empty-state">No advertising banners yet.</div>}
 
+      <Pagination meta={bannersMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="banners" />
+
       {banners.length > 0 && (
         <div className="banner-table-wrap">
           <table className="banner-table">
@@ -851,9 +925,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
   const { data: productsData, isFetching: productsFetching } = useListProductsQuery({
     search: productSearch.trim() || undefined,
     status: 'active',
-    take: 10,
+    limit: 10,
   });
-  const selectableProducts = (productsData?.products ?? []).filter((product) => product.status === 'active' && !product.unavailableForNewActivePlacements);
+  const selectableProducts = (productsData?.data ?? []).filter((product) => product.status === 'active' && !product.unavailableForNewActivePlacements);
   const selectedProduct = selectableProducts.find((product) => product.id === selectedProductId) ?? null;
   const placementBusy = creatingPlacement || movingPlacement || reorderingPlacements;
   const errorMessage = error && 'message' in error ? error.message : null;
@@ -1840,22 +1914,43 @@ function PricesTab({ storeId }: { storeId: string }) {
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [missingPrice, setMissingPrice] = useState<'all' | 'missing' | 'priced'>('all');
+  const [limit, setLimit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const handleLimitChange = (next: number) => {
+    setLimit(next);
+    setOffset(0);
+  };
+  const handleSearchChange = (next: string) => {
+    setSearch(next);
+    setOffset(0);
+  };
+  const handleCategoryChange = (next: string) => {
+    setCategoryId(next);
+    setOffset(0);
+  };
+  const handleMissingPriceChange = (next: 'all' | 'missing' | 'priced') => {
+    setMissingPrice(next);
+    setOffset(0);
+  };
   const missingPriceFilter = missingPrice === 'all' ? '' : missingPrice === 'missing';
   const { data, error, isLoading, isFetching, refetch } = useListStorePricesQuery({
     storeId,
     search,
     categoryId,
     missingPrice: missingPriceFilter,
+    limit,
+    offset,
   });
-  const { data: unfilteredData } = useListStorePricesQuery({ storeId });
-  const prices = data?.prices ?? [];
+  const { data: unfilteredData } = useListStorePricesQuery({ storeId, limit: 200 });
+  const prices = data?.data ?? [];
+  const pricesMeta = data?.meta ?? { total: 0, limit, offset };
   const categoryOptions = useMemo(() => {
     const byId = new Map<string, PriceRow['category']>();
-    for (const row of unfilteredData?.prices ?? prices) {
+    for (const row of unfilteredData?.data ?? prices) {
       byId.set(row.category.id, row.category);
     }
     return [...byId.values()].sort((first, second) => first.name.localeCompare(second.name));
-  }, [prices, unfilteredData?.prices]);
+  }, [prices, unfilteredData?.data]);
   const errorMessage = error && 'message' in error ? error.message : null;
 
   return (
@@ -1876,13 +1971,13 @@ function PricesTab({ storeId }: { storeId: string }) {
           Search
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Name, short name, PLU, SKU or barcode"
           />
         </label>
         <label>
           Category
-          <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+          <select value={categoryId} onChange={(event) => handleCategoryChange(event.target.value)}>
             <option value="">All categories</option>
             {categoryOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
@@ -1891,7 +1986,10 @@ function PricesTab({ storeId }: { storeId: string }) {
         </label>
         <label>
           Price status
-          <select value={missingPrice} onChange={(event) => setMissingPrice(event.target.value as 'all' | 'missing' | 'priced')}>
+          <select
+            value={missingPrice}
+            onChange={(event) => handleMissingPriceChange(event.target.value as 'all' | 'missing' | 'priced')}
+          >
             <option value="all">All products</option>
             <option value="missing">Missing price only</option>
             <option value="priced">With price only</option>
@@ -1902,6 +2000,9 @@ function PricesTab({ storeId }: { storeId: string }) {
       {isLoading && <div className="status status-loading">Loading active catalog prices...</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
       {!isLoading && !errorMessage && prices.length === 0 && <div className="empty-state">No products match these price filters.</div>}
+
+      <Pagination meta={pricesMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="prices" />
+
       {prices.length > 0 && (
         <div className="price-table-wrap">
           <table className="price-table">
@@ -2037,13 +2138,21 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProductStatus | 'all'>('all');
-  const { data, error, isLoading, isFetching, refetch } = useListProductsQuery({ search, status, take: 100 });
-  const products = data?.products ?? [];
+  const [limit, setLimit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const handleLimitChange = (next: number) => {
+    setLimit(next);
+    setOffset(0);
+  };
+  const { data, error, isLoading, isFetching, refetch } = useListProductsQuery({ search, status, limit, offset });
+  const products = data?.data ?? [];
+  const productsMeta = data?.meta ?? { total: 0, limit, offset };
   const errorMessage = error && 'message' in error ? error.message : null;
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSearch(searchDraft.trim());
+    setOffset(0);
   }
 
   return (
@@ -2069,7 +2178,13 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
         </label>
         <label>
           Status
-          <select value={status} onChange={(event) => setStatus(event.target.value as ProductStatus | 'all')}>
+          <select
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value as ProductStatus | 'all');
+              setOffset(0);
+            }}
+          >
             <option value="all">All statuses</option>
             <option value="active">active</option>
             <option value="inactive">inactive</option>
@@ -2082,6 +2197,8 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
       {isLoading && <div className="status status-loading">Loading products...</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
       {!isLoading && !errorMessage && products.length === 0 && <div className="empty-state">No products found.</div>}
+
+      <Pagination meta={productsMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="products" />
 
       {products.length > 0 && (
         <div className="product-table-wrap">
