@@ -71,6 +71,15 @@ export type RevokeStoreAccessRequest = CsrfRequest & {
   storeId: string;
 };
 
+export type CancelInviteRequest = CsrfRequest & {
+  inviteId: string;
+};
+
+export type CancelInviteResponse = {
+  inviteId: string;
+  cancelled: boolean;
+};
+
 export const usersApi = backendApi.injectEndpoints({
   endpoints: (builder) => ({
     listUsers: builder.query<{ users: ManagedUser[] }, { includeDeleted?: boolean } | void>({
@@ -138,6 +147,13 @@ export const usersApi = backendApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { userId }) => [{ type: 'UserStoreAccess', id: userId }],
     }),
+    cancelInvite: builder.mutation<CancelInviteResponse, CancelInviteRequest>({
+      query: ({ inviteId, csrfToken, csrfHeaderName }) => ({
+        url: `/users/invites/${inviteId}`,
+        method: 'DELETE',
+        headers: { [csrfHeaderName]: csrfToken },
+      }),
+    }),
   }),
 });
 
@@ -150,4 +166,5 @@ export const {
   useListUserStoreAccessesQuery,
   useGrantStoreAccessMutation,
   useRevokeStoreAccessMutation,
+  useCancelInviteMutation,
 } = usersApi;

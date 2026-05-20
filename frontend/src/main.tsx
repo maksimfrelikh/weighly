@@ -97,6 +97,7 @@ import {
 import {
   useBlockUserMutation,
   useChangeUserRoleMutation,
+  useCancelInviteMutation,
   useCreateInviteMutation,
   useGrantStoreAccessMutation,
   useListUserStoreAccessesQuery,
@@ -2560,14 +2561,17 @@ function InviteForm() {
   const [role, setRole] = useState<AuthUser['role']>('operator');
   const [expiresAt, setExpiresAt] = useState(getDefaultInviteExpiry());
   const [formError, setFormError] = useState<string | null>(null);
-  const [createdInvite, setCreatedInvite] = useState<{ email: string; token?: string; expiresAt: string } | null>(null);
+  const [createdInvite, setCreatedInvite] = useState<{ id: string; email: string; token?: string; expiresAt: string } | null>(null);
+  const [cancelledInviteEmail, setCancelledInviteEmail] = useState<string | null>(null);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [createInvite, { isLoading }] = useCreateInviteMutation();
+  const [cancelInvite, { isLoading: isCancelling }] = useCancelInviteMutation();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
     setCreatedInvite(null);
+    setCancelledInviteEmail(null);
 
     if (!email.trim()) {
       setFormError('Email is required.');
@@ -2589,7 +2593,7 @@ function InviteForm() {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setCreatedInvite({ email: response.invite.email, token: response.token, expiresAt: response.invite.expiresAt });
+      setCreatedInvite({ id: response.invite.id, email: response.invite.email, token: response.token, expiresAt: response.invite.expiresAt });
       setEmail('');
       setFullName('');
       setRole('operator');
@@ -2621,6 +2625,42 @@ function InviteForm() {
           ) : (
             'Invite created. The invite token is not shown in production.'
           )}
+          <div style={{ marginTop: '0.5rem' }}>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={isCancelling}
+              onClick={async () => {
+                const confirmed = window.confirm('Cancel this invite? The token will be invalidated and cannot be used to register.');
+                if (!confirmed) return;
+                setFormError(null);
+                try {
+                  const csrfData = csrf ?? (await refetchCsrf()).data;
+                  if (!csrfData) {
+                    setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+                    return;
+                  }
+                  await cancelInvite({
+                    inviteId: createdInvite.id,
+                    csrfToken: csrfData.csrfToken,
+                    csrfHeaderName: csrfData.headerName,
+                  }).unwrap();
+                  setCancelledInviteEmail(createdInvite.email);
+                  setCreatedInvite(null);
+                } catch (error) {
+                  const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Invite could not be cancelled.';
+                  setFormError(message);
+                }
+              }}
+            >
+              {isCancelling ? 'Cancelling...' : 'Cancel invite'}
+            </button>
+          </div>
+        </div>
+      )}
+      {cancelledInviteEmail && (
+        <div className="status status-ok" role="status">
+          Invite for <strong>{cancelledInviteEmail}</strong> was cancelled.
         </div>
       )}
       <button type="submit" disabled={isLoading}>{isLoading ? 'Creating invite...' : 'Create invite'}</button>

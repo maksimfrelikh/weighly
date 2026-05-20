@@ -76,6 +76,11 @@ export class UsersController {
     return this.usersService.revokeStoreAccess(userId, storeId, actor.id, this.getRequestContext(request));
   }
 
+  @Delete('invites/:inviteId')
+  cancelInvite(@Param('inviteId') inviteId: string, @Req() request: any, @CurrentUser() actor: AuthenticatedUser) {
+    return this.usersService.cancelInvite(inviteId, actor.id, this.getRequestContext(request));
+  }
+
   @Delete(':userId')
   softDeleteUser(@Param('userId') userId: string, @Req() request: any, @CurrentUser() actor: AuthenticatedUser) {
     return this.usersService.softDeleteUser(userId, actor.id, this.getRequestContext(request));

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
@@ -334,7 +334,7 @@ export class AuthService {
 
     const invite = await this.prisma.userInvite.findUnique({ where: { tokenHash } });
     if (!invite) {
-      throw new BadRequestException('Invitation is invalid');
+      throw new NotFoundException('Invitation not found');
     }
     if (invite.acceptedAt) {
       throw new ConflictException('Invitation has already been accepted');
