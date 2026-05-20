@@ -1,9 +1,13 @@
 # BUG-REG-047 — No HTTP `/api/version` endpoint for deployed-build identification
 
-**Status:** OPEN — backlog
+**Status:** RESOLVED — Wave 5, PR #23 (2026-05-20)
 **Severity:** low
 **Area:** backend / health / ops / CI-CD
 **Found during:** Wave 4 closure verify (2026-05-19) — side finding #4 in `docs/regression/2026-05-19-wave-4-closure/SUMMARY.md`. Also flagged in the prior `96d7d63` Block 2 doc. Confirmed cause of Wave 4 Block 2 FAIL-FAST: staging was serving pre-fix code (`abf5803`) but there was no way to detect that without shell access to the container.
+
+## Resolution (2026-05-20)
+
+Shipped via PR #23 (Wave 5). `backend/src/version.controller.ts` exposes `GET /api/version` returning `{ commit, builtAt, version, environment }`. Build-time injection via `Dockerfile ARG GIT_SHA` → `ENV BUILD_SHA=$GIT_SHA` (hypothesis path (a), enriched to (b) with `package.json` version). No auth (public, same as `/api/health`). Endpoint earned its keep on the very next closure: Wave 5 verify (2026-05-20) caught staging serving a pre-BUG-REG-048 image because `/api/version` returned the wrong SHA — exactly the failure mode it was designed to catch. Then again on BUG-REG-058 closure (BUILD_SHA `5ec323d7` confirmed). Stub status was not refreshed at merge time — corrected here as part of Wave 8 closure inventory hygiene. Follow-up [[BUG-REG-055]] tracks the deploy-pipeline parity gap (manual SHA export) separately.
 
 ## Steps to reproduce
 

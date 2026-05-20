@@ -1,9 +1,13 @@
 # BUG-REG-044 — `qa-admin@example.com` not seeded on staging
 
-**Status:** OPEN — backlog
+**Status:** RESOLVED — Wave 5, PR #22 (2026-05-20)
 **Severity:** low
 **Area:** backend / seed / staging fixtures
 **Found during:** Wave 4 closure verify (2026-05-19) — side finding #1 in `docs/regression/2026-05-19-wave-4-closure/SUMMARY.md`.
+
+## Resolution (2026-05-20)
+
+Shipped via PR #22 (Wave 5). `backend/prisma/seed.js` now upserts `qa-admin@example.com` / `qa-admin12345` (constants `DEFAULT_QA_ADMIN_EMAIL` / `DEFAULT_QA_ADMIN_PASSWORD` at `seed.js:16-17`, called via `upsertQaAdmin()` at `seed.js:312`). Hypothesis path (a) was taken — single seed file, gated by `SEED_ON_STARTUP=true` (staging compose default, prod-safe). Wave 5 closure verify (2026-05-20) used qa-admin session for PASS 5/5 evidence. Stub status was not refreshed at the time — corrected here as part of Wave 8 closure inventory hygiene.
 
 ## Steps to reproduce
 
