@@ -3519,6 +3519,14 @@ function App() {
     setLoginNotice(notice ?? null);
   }
 
+  function clearLoginNoticeAfterLogin() {
+    if (new URLSearchParams(window.location.search).has('inviteAccepted')) {
+      window.history.replaceState(null, '', '/');
+      setPathname('/');
+    }
+    setLoginNotice(null);
+  }
+
   if (acceptInviteRouteActive) {
     return (
       <AcceptInviteScreen
@@ -3541,7 +3549,7 @@ function App() {
   }
 
   if (!hasActiveSession || loginNotice) {
-    return <LoginScreen notice={loginNotice} onLoginSuccess={() => setLoginNotice(null)} />;
+    return <LoginScreen notice={loginNotice} onLoginSuccess={clearLoginNoticeAfterLogin} />;
   }
 
   return <Dashboard user={session!.user} />;
