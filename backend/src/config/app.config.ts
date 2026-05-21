@@ -5,6 +5,10 @@ export interface AppConfiguration {
   port: number;
   databaseUrl: string;
   frontendOrigin: string;
+  emailProvider: 'resend';
+  emailFrom: string;
+  emailReplyTo: string;
+  resendApiKey: string;
   sessionCookieName: string;
   sessionIdleTimeoutMinutes: number;
   sessionAbsoluteTimeoutDays: number;
@@ -25,6 +29,10 @@ export default registerAs(
     port: Number(process.env.PORT),
     databaseUrl: process.env.DATABASE_URL as string,
     frontendOrigin: process.env.FRONTEND_ORIGIN as string,
+    emailProvider: process.env.EMAIL_PROVIDER as 'resend',
+    emailFrom: process.env.EMAIL_FROM as string,
+    emailReplyTo: process.env.EMAIL_REPLY_TO as string,
+    resendApiKey: process.env.RESEND_API_KEY as string,
     sessionCookieName: process.env.SESSION_COOKIE_NAME || 'scale_admin_session',
     sessionIdleTimeoutMinutes: Number(process.env.SESSION_IDLE_TIMEOUT_MINUTES || 30),
     sessionAbsoluteTimeoutDays: Number(process.env.SESSION_ABSOLUTE_TIMEOUT_DAYS || 14),

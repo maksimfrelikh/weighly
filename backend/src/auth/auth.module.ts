@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { EmailModule } from '../email/email.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { CsrfGuard } from './csrf.guard';
@@ -11,6 +12,7 @@ import { SessionGuard } from './session.guard';
 import { StoreAccessGuard } from './store-access.guard';
 
 @Module({
+  imports: [EmailModule],
   controllers: [AuthController],
   providers: [
     AuthService,
