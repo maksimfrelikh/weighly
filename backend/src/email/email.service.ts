@@ -17,7 +17,7 @@ export type PasswordResetEmailInput = {
 
 export class EmailDeliveryError extends Error {
   constructor() {
-    super('Email delivery failed');
+    super('Не удалось отправить письмо');
     this.name = 'EmailDeliveryError';
   }
 }
@@ -37,20 +37,20 @@ export class EmailService {
     const inviteUrl = this.buildFrontendUrl('/accept-invite', input.token);
     await this.send({
       to: input.to,
-      subject: 'Scale Admin invitation',
+      subject: 'Приглашение в Администратор весов',
       text: [
-        'You have been invited to Scale Admin.',
+        'Вас пригласили в Администратор весов.',
         '',
-        `Accept the invitation: ${inviteUrl}`,
-        `This invitation expires at ${input.expiresAt.toISOString()}.`,
+        `Принять приглашение: ${inviteUrl}`,
+        `Ссылка действует до ${input.expiresAt.toISOString()}.`,
         '',
-        'If you did not expect this invitation, ignore this email.',
+        'Если вы не ожидали это приглашение, просто проигнорируйте письмо.',
       ].join('\n'),
       html: [
-        '<p>You have been invited to Scale Admin.</p>',
-        `<p><a href="${escapeHtml(inviteUrl)}">Accept the invitation</a></p>`,
-        `<p>This invitation expires at ${escapeHtml(input.expiresAt.toISOString())}.</p>`,
-        '<p>If you did not expect this invitation, ignore this email.</p>',
+        '<p>Вас пригласили в Администратор весов.</p>',
+        `<p><a href="${escapeHtml(inviteUrl)}">Принять приглашение</a></p>`,
+        `<p>Ссылка действует до ${escapeHtml(input.expiresAt.toISOString())}.</p>`,
+        '<p>Если вы не ожидали это приглашение, просто проигнорируйте письмо.</p>',
       ].join(''),
     });
   }
@@ -59,20 +59,20 @@ export class EmailService {
     const resetUrl = this.buildFrontendUrl('/reset-password', input.token);
     await this.send({
       to: input.to,
-      subject: 'Scale Admin password reset',
+      subject: 'Сброс пароля в Администратор весов',
       text: [
-        'A password reset was requested for your Scale Admin account.',
+        'Для вашей учётной записи в Администратор весов запрошен сброс пароля.',
         '',
-        `Reset your password: ${resetUrl}`,
-        `This password reset link expires at ${input.expiresAt.toISOString()}.`,
+        `Сбросить пароль: ${resetUrl}`,
+        `Ссылка действует до ${input.expiresAt.toISOString()}.`,
         '',
-        'If you did not request this reset, ignore this email.',
+        'Если вы не запрашивали сброс пароля, просто проигнорируйте письмо.',
       ].join('\n'),
       html: [
-        '<p>A password reset was requested for your Scale Admin account.</p>',
-        `<p><a href="${escapeHtml(resetUrl)}">Reset your password</a></p>`,
-        `<p>This password reset link expires at ${escapeHtml(input.expiresAt.toISOString())}.</p>`,
-        '<p>If you did not request this reset, ignore this email.</p>',
+        '<p>Для вашей учётной записи в Администратор весов запрошен сброс пароля.</p>',
+        `<p><a href="${escapeHtml(resetUrl)}">Сбросить пароль</a></p>`,
+        `<p>Ссылка действует до ${escapeHtml(input.expiresAt.toISOString())}.</p>`,
+        '<p>Если вы не запрашивали сброс пароля, просто проигнорируйте письмо.</p>',
       ].join(''),
     });
   }

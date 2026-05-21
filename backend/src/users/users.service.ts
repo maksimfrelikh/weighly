@@ -162,7 +162,7 @@ export class UsersService {
   async grantStoreAccess(userId: string, storeId: string, actorUserId: string, context: RequestContext) {
     const user = await this.findUserById(userId, false);
     if (user.role !== 'operator') {
-      throw new BadRequestException('Store access can only be granted to operator users');
+      throw new BadRequestException('Доступ к магазину можно выдать только пользователю с ролью operator');
     }
 
     const store = await this.findStoreById(storeId);
@@ -229,7 +229,7 @@ export class UsersService {
   async revokeStoreAccess(userId: string, storeId: string, actorUserId: string, context: RequestContext) {
     const user = await this.findUserById(userId, false);
     if (user.role !== 'operator') {
-      throw new BadRequestException('Store access can only be revoked from operator users');
+      throw new BadRequestException('Доступ к магазину можно отозвать только у пользователя с ролью operator');
     }
 
     const store = await this.findStoreById(storeId);
@@ -243,7 +243,7 @@ export class UsersService {
     });
 
     if (!existingAccess) {
-      throw new NotFoundException('Active store access not found');
+      throw new NotFoundException('Активный доступ к магазину не найден');
     }
 
     const now = new Date();
@@ -293,15 +293,15 @@ export class UsersService {
 
   async cancelInvite(inviteId: string, actorUserId: string, context: RequestContext) {
     if (!inviteId) {
-      throw new BadRequestException('Invite id is required');
+      throw new BadRequestException('ID приглашения обязателен');
     }
 
     const invite = await this.prisma.userInvite.findUnique({ where: { id: inviteId } });
     if (!invite) {
-      throw new NotFoundException('Invite not found');
+      throw new NotFoundException('Приглашение не найдено');
     }
     if (invite.acceptedAt) {
-      throw new ConflictException('Accepted invites cannot be cancelled');
+      throw new ConflictException('Принятое приглашение нельзя отменить');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -339,7 +339,7 @@ export class UsersService {
 
   async softDeleteUser(userId: string, actorUserId: string, context: RequestContext) {
     if (userId === actorUserId) {
-      throw new ConflictException('Admins cannot delete their own user');
+      throw new ConflictException('Администратор не может удалить свою учётную запись');
     }
 
     const user = await this.findUserById(userId, false);
@@ -374,12 +374,12 @@ export class UsersService {
 
   private async findStoreById(storeId: string) {
     if (!storeId) {
-      throw new BadRequestException('Store id is required');
+      throw new BadRequestException('ID магазина обязателен');
     }
 
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store || store.status === 'archived') {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Магазин не найден');
     }
 
     return store;
@@ -387,13 +387,13 @@ export class UsersService {
 
   private async findUserById(userId: string, includeDeleted: boolean): Promise<SafeUserRecord> {
     if (!userId) {
-      throw new BadRequestException('User id is required');
+      throw new BadRequestException('ID пользователя обязателен');
     }
 
     // User.id is a UUID column; a non-UUID string would otherwise raise an
     // unhandled Prisma validation error → 500. Short-circuit to 404.
     if (!isUuid(userId)) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Пользователь не найден');
     }
 
     const user = await this.prisma.user.findFirst({
@@ -404,7 +404,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Пользователь не найден');
     }
 
     return user;
@@ -415,7 +415,7 @@ export class UsersService {
       return role;
     }
 
-    throw new BadRequestException('Role must be admin or operator');
+    throw new BadRequestException('Роль должна быть admin или operator');
   }
 
   private toSafeUser(user: SafeUserRecord) {

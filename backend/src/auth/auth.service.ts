@@ -87,7 +87,7 @@ export class AuthService {
     const normalizedEmail = this.normalizeEmail(email);
     if (!normalizedEmail || typeof password !== 'string' || password.length === 0) {
       await this.logLoginAttempt(null, normalizedEmail, false, 'invalid_request', context);
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Неверный email или пароль');
     }
 
     const user = await this.prisma.user.findFirst({
@@ -102,7 +102,7 @@ export class AuthService {
 
     if (!user || user.status !== 'active' || !user.credential) {
       await this.logLoginAttempt(null, normalizedEmail, false, 'invalid_credentials', context);
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Неверный email или пароль');
     }
 
     const now = new Date();
@@ -115,7 +115,7 @@ export class AuthService {
     if (!passwordValid) {
       await this.recordFailedLogin(user.id, user.credential, now);
       await this.logLoginAttempt(user.id, normalizedEmail, false, 'invalid_credentials', context);
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Неверный email или пароль');
     }
 
     const sessionToken = createSessionToken();
@@ -202,7 +202,7 @@ export class AuthService {
 
   async getCurrentSession(sessionToken: string | undefined) {
     if (!sessionToken) {
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException('Требуется авторизация');
     }
 
     const sessionTokenHash = hashSessionToken(sessionToken);
@@ -212,24 +212,24 @@ export class AuthService {
     });
 
     if (!session || session.revokedAt) {
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException('Требуется авторизация');
     }
 
     const now = new Date();
     if (session.expiresAt <= now) {
       await this.revokeSessionById(session.id, 'absolute_timeout');
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException('Требуется авторизация');
     }
 
     const lastUsedAt = session.lastUsedAt ?? session.createdAt;
     if (now.getTime() - lastUsedAt.getTime() > this.idleTimeoutMs) {
       await this.revokeSessionById(session.id, 'idle_timeout');
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException('Требуется авторизация');
     }
 
     if (session.user.deletedAt || session.user.status !== 'active') {
       await this.revokeSessionById(session.id, 'user_inactive');
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException('Требуется авторизация');
     }
 
     await this.prisma.userSession.update({
@@ -279,7 +279,7 @@ export class AuthService {
       select: { id: true },
     });
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException('Пользователь с таким email уже существует');
     }
 
     const invite = await this.prisma.$transaction(async (tx) => {
@@ -323,7 +323,7 @@ export class AuthService {
       });
     } catch {
       await this.deleteUndeliveredInvite(invite.id);
-      throw new ServiceUnavailableException('Invite email could not be delivered. Please retry later.');
+      throw new ServiceUnavailableException('Не удалось отправить письмо с приглашением. Повторите попытку позже.');
     }
 
     return {
@@ -347,13 +347,13 @@ export class AuthService {
 
     const invite = await this.prisma.userInvite.findUnique({ where: { tokenHash } });
     if (!invite) {
-      throw new NotFoundException('Invitation not found');
+      throw new NotFoundException('Приглашение не найдено');
     }
     if (invite.acceptedAt) {
-      throw new ConflictException('Invitation has already been accepted');
+      throw new ConflictException('Приглашение уже принято');
     }
     if (invite.expiresAt <= now) {
-      throw new BadRequestException('Invitation has expired');
+      throw new BadRequestException('Срок действия приглашения истёк');
     }
 
     const emailNormalized = this.normalizeEmail(invite.email);
@@ -369,7 +369,7 @@ export class AuthService {
         select: { id: true },
       });
       if (existingUser) {
-        throw new ConflictException('User with this email already exists');
+        throw new ConflictException('Пользователь с таким email уже существует');
       }
 
       const acceptedInvite = await tx.userInvite.update({
@@ -494,7 +494,7 @@ export class AuthService {
       });
     } catch {
       await this.deleteUndeliveredPasswordResetToken(resetToken.id);
-      throw new ServiceUnavailableException('Password reset email could not be delivered. Please retry later.');
+      throw new ServiceUnavailableException('Не удалось отправить письмо для сброса пароля. Повторите попытку позже.');
     }
 
     return {
@@ -515,16 +515,16 @@ export class AuthService {
       include: { user: true },
     });
     if (!resetToken) {
-      throw new BadRequestException('Password reset token is invalid');
+      throw new BadRequestException('Ссылка для сброса пароля недействительна');
     }
     if (resetToken.usedAt) {
-      throw new ConflictException('Password reset token has already been used');
+      throw new ConflictException('Эта ссылка для сброса пароля уже использована. Если доступ всё ещё нужен, запросите новую ссылку.');
     }
     if (resetToken.expiresAt <= now) {
-      throw new BadRequestException('Password reset token has expired');
+      throw new BadRequestException('Срок действия ссылки для сброса пароля истёк');
     }
     if (resetToken.user.deletedAt || resetToken.user.status !== 'active') {
-      throw new BadRequestException('Password reset token is invalid');
+      throw new BadRequestException('Ссылка для сброса пароля недействительна');
     }
 
     const passwordData = hashPassword(password);
@@ -538,7 +538,7 @@ export class AuthService {
         data: { usedAt: now },
       });
       if (useTokenResult.count !== 1) {
-        throw new ConflictException('Password reset token has already been used');
+        throw new ConflictException('Эта ссылка для сброса пароля уже использована. Если доступ всё ещё нужен, запросите новую ссылку.');
       }
 
       await tx.userCredential.update({
@@ -652,7 +652,7 @@ export class AuthService {
     const retryAfterSeconds = Math.max(Math.ceil((lockedUntil.getTime() - Date.now()) / 1000), 1);
     throw new HttpException(
       {
-        message: 'Too many failed login attempts. Please retry later.',
+        message: 'Слишком много неудачных попыток входа. Повторите попытку позже.',
         error: 'Too Many Requests',
         code: 'LOGIN_TEMPORARILY_LOCKED',
         retryAfterSeconds,
@@ -694,7 +694,7 @@ export class AuthService {
     const trimmedEmail = typeof email === 'string' ? email.trim() : '';
     const normalizedEmail = this.normalizeEmail(trimmedEmail);
     if (!normalizedEmail || !normalizedEmail.includes('@')) {
-      throw new BadRequestException('Valid email is required');
+      throw new BadRequestException('Введите корректный email');
     }
 
     return trimmedEmail;
@@ -704,7 +704,7 @@ export class AuthService {
     const trimmedEmail = typeof email === 'string' ? email.trim() : '';
     const result = validateInviteEmail(trimmedEmail);
     if (!result.valid) {
-      throw new BadRequestException('Valid email is required');
+      throw new BadRequestException('Введите корректный email');
     }
 
     return trimmedEmail;
@@ -715,13 +715,13 @@ export class AuthService {
       return role;
     }
 
-    throw new BadRequestException('Role must be admin or operator');
+    throw new BadRequestException('Роль должна быть admin или operator');
   }
 
   private requireDate(value: string, fieldName: string): Date {
     const date = new Date(value);
     if (!value || Number.isNaN(date.getTime())) {
-      throw new BadRequestException(`${fieldName} must be a valid date`);
+      throw new BadRequestException(`${fieldName} должен быть корректной датой`);
     }
 
     return date;
@@ -730,7 +730,7 @@ export class AuthService {
   private requireToken(token: string): string {
     const normalizedToken = typeof token === 'string' ? token.trim() : '';
     if (!normalizedToken) {
-      throw new BadRequestException('Invitation token is required');
+      throw new BadRequestException('Токен приглашения обязателен');
     }
 
     return normalizedToken;
@@ -739,7 +739,7 @@ export class AuthService {
   private requirePasswordResetToken(token: string): string {
     const normalizedToken = typeof token === 'string' ? token.trim() : '';
     if (!normalizedToken) {
-      throw new BadRequestException('Password reset token is required');
+      throw new BadRequestException('Токен сброса пароля обязателен');
     }
 
     return normalizedToken;
@@ -747,7 +747,7 @@ export class AuthService {
 
   private requirePassword(password: string): string {
     if (typeof password !== 'string' || password.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters');
+      throw new BadRequestException('Пароль должен содержать минимум 8 символов');
     }
 
     return password;

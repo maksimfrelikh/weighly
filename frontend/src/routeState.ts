@@ -36,30 +36,30 @@ export function viewFromHash(hash: string): DashboardView {
   if (hash === '#stores') return { name: 'stores' };
   if (hash === '#store-create') return { name: 'store-create' };
   if (hash === '#stores-not-found') {
-    return routeNotFoundView('stores', 'The store link is unavailable. Open a store from the list instead.');
+    return routeNotFoundView('stores', 'Ссылка на магазин недоступна. Откройте магазин из списка.');
   }
   if (hash.startsWith('#store:')) {
     const storeId = readValidatedHashId(hash, '#store:');
     return storeId
       ? { name: 'store-details', storeId }
-      : routeNotFoundView('stores', 'The store link is empty or malformed. Open a store from the list instead.');
+      : routeNotFoundView('stores', 'Ссылка на магазин пустая или некорректная. Откройте магазин из списка.');
   }
   if (hash.startsWith('#store-edit:')) {
     const storeId = readValidatedHashId(hash, '#store-edit:');
     return storeId
       ? { name: 'store-edit', storeId }
-      : routeNotFoundView('stores', 'The store edit link is empty or malformed. Open a store from the list instead.');
+      : routeNotFoundView('stores', 'Ссылка на редактирование магазина пустая или некорректная. Откройте магазин из списка.');
   }
   if (hash === '#products') return { name: 'products' };
   if (hash === '#product-create') return { name: 'product-create' };
   if (hash === '#products-not-found') {
-    return routeNotFoundView('products', 'The product link is unavailable. Open a product from the list instead.');
+    return routeNotFoundView('products', 'Ссылка на товар недоступна. Откройте товар из списка.');
   }
   if (hash.startsWith('#product-edit:')) {
     const productId = readValidatedHashId(hash, '#product-edit:');
     return productId
       ? { name: 'product-edit', productId }
-      : routeNotFoundView('products', 'The product edit link is empty or malformed. Open a product from the list instead.');
+      : routeNotFoundView('products', 'Ссылка на редактирование товара пустая или некорректная. Откройте товар из списка.');
   }
   return { name: 'overview' };
 }

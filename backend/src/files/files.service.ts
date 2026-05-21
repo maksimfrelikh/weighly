@@ -39,13 +39,13 @@ export class FilesService {
 
   async uploadImage(file: UploadedMultipartFile | undefined, actorUserId: string, context: RequestContext) {
     if (!file?.buffer || file.buffer.length === 0) {
-      throw new BadRequestException('Image file is required');
+      throw new BadRequestException('Файл изображения обязателен');
     }
 
     const buffer = file.buffer;
 
     if (buffer.length > MAX_IMAGE_SIZE_BYTES || (file.size !== undefined && file.size > MAX_IMAGE_SIZE_BYTES)) {
-      throw new BadRequestException('Image file must be at most 2 MB');
+      throw new BadRequestException('Файл изображения должен быть не больше 2 МБ');
     }
 
     const originalFilename = this.requireOriginalFilename(file.originalname);
@@ -53,11 +53,11 @@ export class FilesService {
     const detectedType = this.detectImageType(buffer);
 
     if (!detectedType) {
-      throw new BadRequestException('Only jpg, png, or webp images are supported');
+      throw new BadRequestException('Поддерживаются только изображения jpg, png или webp');
     }
 
     if (!this.extensionMatchesType(uploadedExtension, detectedType)) {
-      throw new BadRequestException('Image extension does not match actual file type');
+      throw new BadRequestException('Расширение изображения не совпадает с фактическим типом файла');
     }
 
     await mkdir(this.imageUploadDirectory, { recursive: true });
@@ -130,14 +130,14 @@ export class FilesService {
         throw error;
       }
 
-      throw new InternalServerErrorException('Failed to save uploaded image');
+      throw new InternalServerErrorException('Не удалось сохранить загруженное изображение');
     }
   }
 
   private requireOriginalFilename(originalFilename: string | undefined): string {
     const normalized = typeof originalFilename === 'string' ? originalFilename.trim() : '';
     if (!normalized || normalized.length > 255) {
-      throw new BadRequestException('Original filename is required and must be at most 255 characters');
+      throw new BadRequestException('Исходное имя файла обязательно и должно быть не длиннее 255 символов');
     }
 
     return normalized;
@@ -146,7 +146,7 @@ export class FilesService {
   private getAllowedExtension(filename: string): string {
     const extension = extname(filename).slice(1).toLowerCase();
     if (!ALLOWED_EXTENSIONS.has(extension)) {
-      throw new BadRequestException('Only jpg, png, or webp image extensions are supported');
+      throw new BadRequestException('Поддерживаются только расширения изображений jpg, png или webp');
     }
 
     return extension;

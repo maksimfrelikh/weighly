@@ -19,7 +19,7 @@ function configService(nodeEnv = 'test') {
         authFailedLoginLockMinutes: 10,
         frontendOrigin: 'https://example.test',
         emailProvider: 'resend',
-        emailFrom: 'Scale Admin <invites@maksimfrelikh.ru>',
+        emailFrom: 'Администратор весов <invites@maksimfrelikh.ru>',
         emailReplyTo: 'frelikhmax@gmail.com',
         resendApiKey: 're_test_placeholder',
       };
@@ -183,7 +183,7 @@ async function testCreateInviteDeletesRowWhenEmailDeliveryFails() {
     () => service.createInvite(buildInput('cleanup@example.test'), 'actor-id', {}),
     (error) => {
       assert.ok(error instanceof ServiceUnavailableException);
-      assert.match(error.message, /Invite email could not be delivered/);
+      assert.match(error.message, /Не удалось отправить письмо с приглашением/);
       return true;
     },
   );

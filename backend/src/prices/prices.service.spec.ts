@@ -94,7 +94,7 @@ describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
       () => service.listStorePriceCategories(storeId),
       (error: Error) => {
         assert.equal(error.name, 'NotFoundException');
-        assert.match(error.message, /Active store catalog not found/);
+        assert.match(error.message, /Активный каталог магазина не найден/);
         return true;
       },
     );
@@ -108,7 +108,7 @@ describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
       () => service.listStorePriceCategories(''),
       (error: Error) => {
         assert.equal(error.name, 'BadRequestException');
-        assert.match(error.message, /Store id is required/);
+        assert.match(error.message, /ID магазина обязателен/);
         return true;
       },
     );

@@ -24,17 +24,17 @@ export class StoreAccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     if (!user) {
-      throw new ForbiddenException('Authentication required');
+      throw new ForbiddenException('Требуется авторизация');
     }
 
     const storeId = this.getStoreId(request, requirement);
     if (!storeId) {
-      throw new ForbiddenException('Store access denied');
+      throw new ForbiddenException('Нет доступа к магазину');
     }
 
     const hasAccess = await this.authService.canAccessStore(user.id, user.role, storeId);
     if (!hasAccess) {
-      throw new ForbiddenException('Store access denied');
+      throw new ForbiddenException('Нет доступа к магазину');
     }
 
     return true;

@@ -23,7 +23,7 @@ export function Pagination({
   onOffsetChange,
   onLimitChange,
   pageSizeOptions = PAGE_SIZE_OPTIONS,
-  label = 'items',
+  label = 'записей',
 }: PaginationProps) {
   const { total, limit, offset } = meta;
   const first = total === 0 ? 0 : offset + 1;
@@ -51,7 +51,7 @@ export function Pagination({
   return (
     <div className="pagination" data-testid="pagination">
       <span className="pagination__label muted" data-testid="pagination-label">
-        {total === 0 ? `0 ${label}` : `${first}–${last} of ${total} ${label}`}
+        {total === 0 ? `0 ${label}` : `${first}–${last} из ${total} ${label}`}
       </span>
       <div className="pagination__controls">
         <button
@@ -61,7 +61,7 @@ export function Pagination({
           onClick={handlePrev}
           disabled={atStart}
         >
-          Prev
+          Назад
         </button>
         <button
           type="button"
@@ -70,10 +70,10 @@ export function Pagination({
           onClick={handleNext}
           disabled={atEnd}
         >
-          Next
+          Вперёд
         </button>
         <label className="pagination__page-size">
-          <span className="muted">Per page</span>
+          <span className="muted">На странице</span>
           <select value={limit} onChange={handlePageSizeChange} data-testid="pagination-page-size">
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>

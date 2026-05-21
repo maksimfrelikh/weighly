@@ -13,7 +13,7 @@ const validBase = (): Record<string, unknown> => ({
 const resendBase = (): Record<string, unknown> => ({
   ...validBase(),
   EMAIL_PROVIDER: 'resend',
-  EMAIL_FROM: 'Scale Admin <invites@maksimfrelikh.ru>',
+  EMAIL_FROM: 'Администратор весов <invites@maksimfrelikh.ru>',
   EMAIL_REPLY_TO: 'frelikhmax@gmail.com',
   RESEND_API_KEY: 're_test_placeholder',
 });
@@ -97,7 +97,7 @@ describe('validateEnvironment — required vars (BUG-REG-049)', () => {
 
   it('throws when EMAIL_FROM does not contain an email address', () => {
     assert.throws(
-      () => validateEnvironment({ ...resendBase(), EMAIL_FROM: 'Scale Admin' }),
+      () => validateEnvironment({ ...resendBase(), EMAIL_FROM: 'Администратор весов' }),
       /EMAIL_FROM must contain a valid email address/,
     );
   });
@@ -208,7 +208,7 @@ describe('validateEnvironment — happy path and defaults', () => {
     const result = validateEnvironment(resendBase());
 
     assert.equal(result.EMAIL_PROVIDER, 'resend');
-    assert.equal(result.EMAIL_FROM, 'Scale Admin <invites@maksimfrelikh.ru>');
+    assert.equal(result.EMAIL_FROM, 'Администратор весов <invites@maksimfrelikh.ru>');
     assert.equal(result.EMAIL_REPLY_TO, 'frelikhmax@gmail.com');
     assert.equal(result.RESEND_API_KEY, 're_test_placeholder');
   });

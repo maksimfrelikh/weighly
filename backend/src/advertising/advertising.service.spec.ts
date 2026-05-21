@@ -30,7 +30,7 @@ describe('AdvertisingService — banner imageUrl validation (BUG-REG-040)', () =
         if (result.valid === false) {
           assert.match(
             result.reason,
-            /imageUrl (must be a valid http\(s\) URL|is required)/,
+            /imageUrl (должен быть корректным URL с протоколом http\(s\)|обязателен)/,
           );
         }
       });
@@ -50,7 +50,7 @@ describe('AdvertisingService — banner imageUrl validation (BUG-REG-040)', () =
         const result = validateBannerImageUrl(value);
         assert.equal(result.valid, false);
         if (result.valid === false) {
-          assert.equal(result.reason, 'imageUrl is required');
+          assert.equal(result.reason, 'imageUrl обязателен');
         }
       });
     }

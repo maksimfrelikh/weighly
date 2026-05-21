@@ -188,7 +188,7 @@ export class CatalogPackageService {
     });
 
     if (!catalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     return catalog;
@@ -322,7 +322,7 @@ export class CatalogPackageService {
   private normalizeRequiredId(value: string): string {
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     if (!normalizedValue) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
     return normalizedValue;
   }

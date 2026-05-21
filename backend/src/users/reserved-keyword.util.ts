@@ -17,5 +17,5 @@ export function isReservedUserIdKeyword(value: unknown): boolean {
 }
 
 export function reservedUserIdMessage(value: string): string {
-  return `'${value}' is a reserved keyword, not a user id. Use GET /api/auth/session for the current authenticated user.`;
+  return `'${value}' — зарезервированное слово, а не ID пользователя. Для текущего пользователя используйте GET /api/auth/session.`;
 }

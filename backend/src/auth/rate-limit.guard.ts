@@ -39,7 +39,7 @@ export class RateLimitGuard implements CanActivate {
     if (!result.allowed) {
       throw new HttpException(
         {
-          message: 'Too many requests. Please retry later.',
+          message: 'Слишком много запросов. Повторите попытку позже.',
           error: 'Too Many Requests',
           code: 'RATE_LIMIT_EXCEEDED',
           retryAfterSeconds: result.retryAfterSeconds,

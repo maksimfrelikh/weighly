@@ -114,7 +114,7 @@ export class CatalogValidationService {
     if (categories.length === 0 || activePlacements.length === 0) {
       warnings.push({
         code: 'EMPTY_CATALOG',
-        message: 'Active catalog has no categories or no active product placements.',
+        message: 'В активном каталоге нет категорий или активных размещений товаров.',
         entityType: 'StoreCatalog',
         entityId: catalog.id,
         metadata: { categoryCount: categories.length, activePlacementCount: activePlacements.length },
@@ -150,7 +150,7 @@ export class CatalogValidationService {
     });
 
     if (!catalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     return catalog;
@@ -163,7 +163,7 @@ export class CatalogValidationService {
       if (!category.name?.trim() || !category.shortName?.trim()) {
         blockingErrors.push({
           code: 'CATEGORY_REQUIRED_FIELDS_MISSING',
-          message: 'Category name and shortName are required before publishing.',
+          message: 'Перед публикацией у категории должны быть название и короткое название.',
           entityType: 'Category',
           entityId: category.id,
         });
@@ -171,7 +171,7 @@ export class CatalogValidationService {
       if (!Number.isInteger(category.sortOrder) || category.sortOrder < 0) {
         blockingErrors.push({
           code: 'CATEGORY_INVALID_SORT_ORDER',
-          message: 'Category sortOrder must be a non-negative integer.',
+          message: 'sortOrder категории должен быть неотрицательным целым числом.',
           entityType: 'Category',
           entityId: category.id,
           metadata: { sortOrder: category.sortOrder },
@@ -180,7 +180,7 @@ export class CatalogValidationService {
       if (category.catalogId !== catalog.id) {
         blockingErrors.push({
           code: 'CATEGORY_OUTSIDE_ACTIVE_CATALOG',
-          message: 'Category belongs outside the active catalog.',
+          message: 'Категория находится вне активного каталога.',
           entityType: 'Category',
           entityId: category.id,
           metadata: { categoryCatalogId: category.catalogId, activeCatalogId: catalog.id },
@@ -189,7 +189,7 @@ export class CatalogValidationService {
       if (category.parentId && !byId.has(category.parentId)) {
         blockingErrors.push({
           code: 'CATEGORY_PARENT_OUTSIDE_CATALOG',
-          message: 'Category parent does not exist in the same active catalog.',
+          message: 'Родительская категория отсутствует в этом активном каталоге.',
           entityType: 'Category',
           entityId: category.id,
           metadata: { parentId: category.parentId },
@@ -204,7 +204,7 @@ export class CatalogValidationService {
         if (seen.has(current.id)) {
           blockingErrors.push({
             code: 'CATEGORY_TREE_CYCLE',
-            message: 'Category tree contains a cycle.',
+            message: 'Дерево категорий содержит цикл.',
             entityType: 'Category',
             entityId: category.id,
           });
@@ -235,7 +235,7 @@ export class CatalogValidationService {
       if (placement.catalogId !== catalog.id) {
         blockingErrors.push({
           code: 'PLACEMENT_OUTSIDE_ACTIVE_CATALOG',
-          message: 'Active placement belongs outside the active catalog.',
+          message: 'Активное размещение находится вне активного каталога.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
         });
@@ -244,7 +244,7 @@ export class CatalogValidationService {
       if (!placement.category) {
         blockingErrors.push({
           code: 'PLACEMENT_CATEGORY_MISSING',
-          message: 'Active placement references a missing category.',
+          message: 'Активное размещение ссылается на отсутствующую категорию.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
           metadata: { categoryId: placement.categoryId },
@@ -252,7 +252,7 @@ export class CatalogValidationService {
       } else if (placement.category.status !== 'active') {
         blockingErrors.push({
           code: 'ACTIVE_PLACEMENT_IN_INACTIVE_CATEGORY',
-          message: 'Active placement is assigned to an inactive or archived category.',
+          message: 'Активное размещение назначено в неактивную или архивную категорию.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
           metadata: { categoryId: placement.categoryId, categoryStatus: placement.category.status },
@@ -262,7 +262,7 @@ export class CatalogValidationService {
       if (!placement.product) {
         blockingErrors.push({
           code: 'PLACEMENT_PRODUCT_MISSING',
-          message: 'Active placement references a missing product.',
+          message: 'Активное размещение ссылается на отсутствующий товар.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
           metadata: { productId: placement.productId },
@@ -273,7 +273,7 @@ export class CatalogValidationService {
       if (placement.product.status !== 'active') {
         blockingErrors.push({
           code: 'ACTIVE_PLACEMENT_HAS_INACTIVE_PRODUCT',
-          message: 'Active placement references an inactive or archived product.',
+          message: 'Активное размещение ссылается на неактивный или архивный товар.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
           metadata: { productId: placement.productId, productStatus: placement.product.status },
@@ -282,7 +282,7 @@ export class CatalogValidationService {
       if (!placement.product.shortName?.trim() || !placement.product.defaultPluCode?.trim()) {
         blockingErrors.push({
           code: 'PRODUCT_REQUIRED_FIELDS_MISSING',
-          message: 'Product shortName and defaultPluCode are required before publishing.',
+          message: 'Перед публикацией у товара должны быть shortName и defaultPluCode.',
           entityType: 'Product',
           entityId: placement.product.id,
           metadata: { placementId: placement.id },
@@ -291,7 +291,7 @@ export class CatalogValidationService {
       if (!pricedProductIds.has(placement.productId)) {
         blockingErrors.push({
           code: 'ACTIVE_PLACEMENT_PRICE_MISSING',
-          message: 'Active placement product does not have an active positive price for the store.',
+          message: 'У товара в активном размещении нет активной положительной цены для магазина.',
           entityType: 'CatalogProductPlacement',
           entityId: placement.id,
           metadata: { productId: placement.productId, storeId: catalog.storeId },
@@ -301,7 +301,7 @@ export class CatalogValidationService {
         if (price && !ALLOWED_CURRENCIES.includes(price.currency as AllowedCurrency)) {
           blockingErrors.push({
             code: 'PRICE_CURRENCY_NOT_SUPPORTED',
-            message: 'Active placement price uses an unsupported currency.',
+            message: 'Цена активного размещения использует неподдерживаемую валюту.',
             entityType: 'StoreProductPrice',
             entityId: price.id,
             metadata: {
@@ -325,7 +325,7 @@ export class CatalogValidationService {
       if (duplicatePlacements.length > 1) {
         blockingErrors.push({
           code: 'DUPLICATE_DEFAULT_PLU_CODE',
-          message: 'Active package candidates contain duplicate defaultPluCode values.',
+          message: 'Кандидаты для пакета содержат повторяющиеся defaultPluCode.',
           entityType: 'Product',
           metadata: {
             defaultPluCode,
@@ -345,7 +345,7 @@ export class CatalogValidationService {
     if (activeBanners.length === 0) {
       warnings.push({
         code: 'NO_ACTIVE_ADVERTISING_BANNERS',
-        message: 'Catalog has no active advertising banners; publishing can continue without ads.',
+        message: 'В каталоге нет активных рекламных баннеров. Публикацию можно продолжить без рекламы.',
         entityType: 'AdvertisingBanner',
       });
       return;
@@ -355,7 +355,7 @@ export class CatalogValidationService {
       if (!banner.imageUrl?.trim()) {
         blockingErrors.push({
           code: 'ACTIVE_BANNER_IMAGE_URL_MISSING',
-          message: 'Active advertising banner must have an imageUrl.',
+          message: 'У активного рекламного баннера должен быть imageUrl.',
           entityType: 'AdvertisingBanner',
           entityId: banner.id,
         });
@@ -363,7 +363,7 @@ export class CatalogValidationService {
       if (!Number.isInteger(banner.sortOrder) || banner.sortOrder < 0) {
         blockingErrors.push({
           code: 'ACTIVE_BANNER_INVALID_SORT_ORDER',
-          message: 'Active advertising banner sortOrder must be a non-negative integer.',
+          message: 'sortOrder активного рекламного баннера должен быть неотрицательным целым числом.',
           entityType: 'AdvertisingBanner',
           entityId: banner.id,
           metadata: { sortOrder: banner.sortOrder },
@@ -372,7 +372,7 @@ export class CatalogValidationService {
       if (banner.status !== 'active') {
         blockingErrors.push({
           code: 'ACTIVE_BANNER_BAD_STATUS',
-          message: 'Only active banners should be included in the active banner set.',
+          message: 'В активный набор баннеров должны входить только активные баннеры.',
           entityType: 'AdvertisingBanner',
           entityId: banner.id,
           metadata: { status: banner.status },
@@ -381,7 +381,7 @@ export class CatalogValidationService {
       if (banner.imageFileAssetId && !banner.imageFileAsset) {
         blockingErrors.push({
           code: 'ACTIVE_BANNER_FILE_REFERENCE_MISSING',
-          message: 'Active advertising banner references a missing file asset.',
+          message: 'Активный рекламный баннер ссылается на отсутствующий файл.',
           entityType: 'AdvertisingBanner',
           entityId: banner.id,
           metadata: { imageFileAssetId: banner.imageFileAssetId },
@@ -393,7 +393,7 @@ export class CatalogValidationService {
   private normalizeRequiredId(value: string): string {
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     if (!normalizedValue) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
     return normalizedValue;
   }

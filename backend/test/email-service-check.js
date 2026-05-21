@@ -34,7 +34,7 @@ async function testInviteEmailLink() {
 
   assert.equal(provider.sent.length, 1);
   assert.equal(provider.sent[0].to, 'operator@example.test');
-  assert.equal(provider.sent[0].subject, 'Scale Admin invitation');
+  assert.equal(provider.sent[0].subject, 'Приглашение в Администратор весов');
   assert.match(provider.sent[0].text, /https:\/\/staging\.maksimfrelikh\.ru\/accept-invite\?token=invite-token-123/);
   assert.match(provider.sent[0].text, /2026-05-22T12:00:00.000Z/);
 }
@@ -52,7 +52,7 @@ async function testPasswordResetEmailLink() {
 
   assert.equal(provider.sent.length, 1);
   assert.equal(provider.sent[0].to, 'admin@example.test');
-  assert.equal(provider.sent[0].subject, 'Scale Admin password reset');
+  assert.equal(provider.sent[0].subject, 'Сброс пароля в Администратор весов');
   assert.match(provider.sent[0].text, /https:\/\/maksimfrelikh\.ru\/reset-password\?token=reset-token-456/);
   assert.match(provider.sent[0].text, /2026-05-22T13:00:00.000Z/);
 }

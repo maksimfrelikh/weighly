@@ -34,7 +34,7 @@ export class FilesController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     if (!file) {
-      throw new BadRequestException('Image file is required');
+      throw new BadRequestException('Файл изображения обязателен');
     }
 
     return this.filesService.uploadImage(file, user.id, this.getRequestContext(request));

@@ -26,6 +26,36 @@ const backendBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:30
 const authSessionEventName = 'scale-admin:auth-session-event';
 const storeListChangedEventName = 'scale-admin:store-list-changed-event';
 
+const backendMessageTranslations: Record<string, string> = {
+  'Invalid email or password': 'Неверный email или пароль.',
+  'Неверный email или пароль': 'Неверный email или пароль.',
+  'Authentication required': 'Требуется авторизация. Войдите в систему и повторите запрос.',
+  'Требуется авторизация': 'Требуется авторизация. Войдите в систему и повторите запрос.',
+  'CSRF token required or invalid': 'Сессия формы истекла. Обновите страницу и повторите действие.',
+  'Сессия формы истекла. Обновите страницу и повторите действие.': 'Сессия формы истекла. Обновите страницу и повторите действие.',
+  'Too many requests. Please retry later.': 'Слишком много попыток. Подождите немного и повторите действие.',
+  'Слишком много запросов. Повторите попытку позже.': 'Слишком много попыток. Подождите немного и повторите действие.',
+  'User with this email already exists': 'Пользователь с таким email уже существует.',
+  'Invitation not found': 'Приглашение не найдено.',
+  'Invitation has already been accepted': 'Это приглашение уже принято.',
+  'Invitation has expired': 'Срок действия приглашения истёк.',
+  'Invitation token is required': 'В ссылке приглашения отсутствует токен.',
+  'Password reset token is required': 'В ссылке сброса пароля отсутствует токен.',
+  'Password reset token is invalid': 'Ссылка для сброса пароля недействительна.',
+  'Password reset token has already been used': 'Эта ссылка для сброса пароля уже использована. Если доступ всё ещё нужен, запросите новую ссылку.',
+  'Password reset token has expired': 'Срок действия ссылки для сброса пароля истёк. Запросите новую ссылку.',
+  'Password must be at least 8 characters': 'Пароль должен содержать минимум 8 символов.',
+  'Valid email is required': 'Введите корректный email.',
+};
+
+function translateBackendMessage(message: string | undefined): string | undefined {
+  if (!message) {
+    return undefined;
+  }
+
+  return backendMessageTranslations[message] ?? message;
+}
+
 type AuthSessionEvent = {
   id: string;
   type: 'session-cleared' | 'session-changed';
@@ -249,12 +279,13 @@ function messageFromData(data: unknown): string | undefined {
 function normalizeError(error: FetchBaseQueryError): ApiError {
   const backendMessage = messageFromData(error.data);
   const backendData = error.data && typeof error.data === 'object' ? (error.data as BackendErrorData) : undefined;
+  const translatedMessage = translateBackendMessage(backendMessage);
 
   if (error.status === 401) {
     return {
       status: 401,
       message:
-        backendMessage === 'Invalid email or password'
+        translatedMessage === 'Неверный email или пароль.'
           ? 'Неверный email или пароль.'
           : 'Требуется авторизация. Войдите в систему и повторите запрос.',
     };
@@ -264,7 +295,7 @@ function normalizeError(error: FetchBaseQueryError): ApiError {
     return {
       status: 403,
       message:
-        backendMessage === 'CSRF token required or invalid'
+        translatedMessage === 'Сессия формы истекла. Обновите страницу и повторите действие.'
           ? 'Сессия формы истекла. Обновите страницу и повторите действие.'
           : 'Недостаточно прав для выполнения запроса.',
     };
@@ -280,21 +311,21 @@ function normalizeError(error: FetchBaseQueryError): ApiError {
   if (error.status === 'FETCH_ERROR') {
     return {
       status: 'FETCH_ERROR',
-      message: 'Backend недоступен. Проверьте, что сервер запущен, и повторите попытку.',
+      message: 'Сервер недоступен. Проверьте, что он запущен, и повторите попытку.',
     };
   }
 
   if (error.status === 'PARSING_ERROR') {
     return {
       status: 'PARSING_ERROR',
-      message: 'Backend вернул неожиданный формат ответа.',
+      message: 'Сервер вернул неожиданный формат ответа.',
     };
   }
 
   if (error.status === 'TIMEOUT_ERROR') {
     return {
       status: 'TIMEOUT_ERROR',
-      message: 'Backend не ответил вовремя. Повторите попытку позже.',
+      message: 'Сервер не ответил вовремя. Повторите попытку позже.',
     };
   }
 
@@ -307,7 +338,7 @@ function normalizeError(error: FetchBaseQueryError): ApiError {
 
   return {
     status: error.status,
-    message: backendMessage ?? `Backend returned HTTP ${error.status}`,
+    message: translatedMessage ?? `Сервер вернул HTTP ${error.status}`,
     data: backendData,
   };
 }
