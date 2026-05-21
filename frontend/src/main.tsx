@@ -282,6 +282,11 @@ function acceptInviteErrorMessage(error: unknown) {
   }
 
   if (error.status === 409) {
+    const backendMessage = error.message.toLowerCase();
+    if (backendMessage.includes('user with this email already exists')) {
+      return 'An account already exists for this invitation email. Sign in or ask an admin for help.';
+    }
+
     return 'This invitation has already been accepted. Sign in with the password that was set for it, or ask an admin for help.';
   }
 
