@@ -54,3 +54,44 @@ A behavior change — tightening the validator to reject leading/trailing whites
 
 **Cross-references:** [[BUG-REG-061]] originating side finding (Wave 5 closure SUMMARY #7). [[BUG-REG-039]] — original email-validator stub; trim-then-validate contract origin.
 
+## EmailModule provider and delivery contract
+
+**Email delivery is backend-only.** The only real delivery provider is Resend. SendGrid is not used by this application and must not be reintroduced for invite or password-reset delivery.
+
+**Runtime env:**
+
+```
+EMAIL_PROVIDER=disabled | resend
+EMAIL_FROM="Scale Admin <invites@maksimfrelikh.ru>"
+EMAIL_REPLY_TO="frelikhmax@gmail.com"
+RESEND_API_KEY=<backend secret only; required only when EMAIL_PROVIDER=resend>
+FRONTEND_ORIGIN=<trusted frontend base URL>
+```
+
+`EMAIL_PROVIDER=disabled` is the safe local/dev default. It performs no external send in non-production, allowing dev/test flows to keep using the existing non-production raw-token response. In production, a disabled provider causes invite/reset delivery attempts to fail with the same generic `503` cleanup path as any other delivery failure, so valid unreachable tokens are not left behind.
+
+Staging/prod real delivery requires `EMAIL_PROVIDER=resend` plus a populated `RESEND_API_KEY` before deploy/smoke.
+
+`RESEND_API_KEY` is a backend secret. It must never be exposed as a `VITE_*` value, printed in startup logs, committed to docs, returned from an API, or included in test output.
+
+**Implementing module:** `backend/src/email/*`.
+
+**Auth integration:**
+
+- Invite creation sends `sendInviteEmail({ to, token, expiresAt })`.
+- Password-reset request sends `sendPasswordResetEmail({ to, token, expiresAt })`.
+- Email links are built from `FRONTEND_ORIGIN` only. Request headers are not trusted for link construction.
+- Current link targets are future frontend routes: `/accept-invite?token=...` and `/reset-password?token=...`.
+- Emails include a minimal plain-text fallback.
+
+**Failure policy:**
+
+If email delivery fails after a token row is created, the backend deletes the created invite/reset-token row before returning a generic `503` delivery failure. This prevents production from leaving valid tokens in the database that no user can reach.
+
+**Token exposure:**
+
+Production responses do not return raw invite or password-reset tokens. Non-production preserves the existing raw-token response after successful email delivery so local verification can continue without real mailbox access. Raw tokens must not be logged or written to audit metadata.
+
+**Tests:**
+
+Automated tests must use a mocked email provider. No test should make a real Resend API call.

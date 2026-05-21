@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { BadRequestException } = require('@nestjs/common');
+const { BadRequestException, ServiceUnavailableException } = require('@nestjs/common');
 const { AuthService } = require('../dist/auth/auth.service');
 const { validateInviteEmail } = require('../dist/auth/email-validation.util');
 
@@ -17,16 +17,30 @@ function configService(nodeEnv = 'test') {
         passwordResetTokenTtlMinutes: 15,
         authFailedLoginMaxAttempts: 5,
         authFailedLoginLockMinutes: 10,
+        frontendOrigin: 'https://example.test',
+        emailProvider: 'resend',
+        emailFrom: 'Scale Admin <invites@maksimfrelikh.ru>',
+        emailReplyTo: 'frelikhmax@gmail.com',
+        resendApiKey: 're_test_placeholder',
       };
     },
   };
 }
 
-function buildService() {
+function buildService(emailService = { sendInviteEmail: async () => undefined }) {
   const created = [];
   const prisma = {
     user: {
       findFirst: async () => null,
+    },
+    userInvite: {
+      deleteMany: async ({ where }) => {
+        const index = created.findIndex((invite) => invite.id === where.id);
+        if (index >= 0 && created[index].acceptedAt === where.acceptedAt) {
+          created.splice(index, 1);
+        }
+        return { count: index >= 0 ? 1 : 0 };
+      },
     },
     $transaction: async (callback) => {
       const tx = {
@@ -47,7 +61,7 @@ function buildService() {
     },
   };
   const auditLogs = { create: async () => undefined };
-  const service = new AuthService(prisma, auditLogs, configService());
+  const service = new AuthService(prisma, auditLogs, configService(), emailService);
   return { service, created };
 }
 
@@ -138,11 +152,17 @@ async function testCreateInviteRejectsBadEmails() {
 }
 
 async function testCreateInviteAcceptsValidEmail() {
-  const { service, created } = buildService();
+  const sent = [];
+  const { service, created } = buildService({
+    sendInviteEmail: async (input) => sent.push(input),
+  });
   const result = await service.createInvite(buildInput('admin@maksimfrelikh.ru'), 'actor-id', {});
   assert.equal(created.length, 1, 'invite should be persisted via mock prisma');
   assert.equal(result.invite.email, 'admin@maksimfrelikh.ru');
   assert.equal(result.invite.role, 'operator');
+  assert.equal(sent.length, 1, 'invite email should be sent');
+  assert.equal(sent[0].to, 'admin@maksimfrelikh.ru');
+  assert.equal(sent[0].expiresAt.toISOString(), '2026-12-31T20:00:00.000Z');
 }
 
 async function testCreateInviteAcceptsPlusAddressing() {
@@ -152,6 +172,24 @@ async function testCreateInviteAcceptsPlusAddressing() {
   assert.equal(result.invite.email, 'qa+filter@example.test');
 }
 
+async function testCreateInviteDeletesRowWhenEmailDeliveryFails() {
+  const { service, created } = buildService({
+    sendInviteEmail: async () => {
+      throw new Error('delivery failed');
+    },
+  });
+
+  await assert.rejects(
+    () => service.createInvite(buildInput('cleanup@example.test'), 'actor-id', {}),
+    (error) => {
+      assert.ok(error instanceof ServiceUnavailableException);
+      assert.match(error.message, /Invite email could not be delivered/);
+      return true;
+    },
+  );
+  assert.equal(created.length, 0, 'undelivered invite row should be deleted');
+}
+
 (async () => {
   testValidatorRejectsBadInputs();
   testValidatorAcceptsValidInputs();
@@ -159,6 +197,7 @@ async function testCreateInviteAcceptsPlusAddressing() {
   await testCreateInviteRejectsBadEmails();
   await testCreateInviteAcceptsValidEmail();
   await testCreateInviteAcceptsPlusAddressing();
+  await testCreateInviteDeletesRowWhenEmailDeliveryFails();
   console.log('AUTH_INVITES_EMAIL_VALIDATION=PASS');
 })().catch((error) => {
   console.error(error);

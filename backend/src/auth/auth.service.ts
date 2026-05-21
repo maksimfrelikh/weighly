@@ -1,7 +1,8 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { EmailService } from '../email/email.service';
 import type { AppConfiguration } from '../config/app.config';
 import { hashPassword, verifyPassword } from './password.util';
 import { createSessionToken, hashSessionToken } from './session-token.util';
@@ -56,6 +57,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly auditLogs: AuditLogService,
     configService: ConfigService,
+    private readonly emails: EmailService,
   ) {
     this.appConfig = configService.getOrThrow<AppConfiguration>('app');
     this.idleTimeoutMs = this.appConfig.sessionIdleTimeoutMinutes * 60 * 1000;
@@ -313,6 +315,17 @@ export class AuthService {
       return createdInvite;
     });
 
+    try {
+      await this.emails.sendInviteEmail({
+        to: invite.email,
+        token,
+        expiresAt: invite.expiresAt,
+      });
+    } catch {
+      await this.deleteUndeliveredInvite(invite.id);
+      throw new ServiceUnavailableException('Invite email could not be delivered. Please retry later.');
+    }
+
     return {
       invite: {
         id: invite.id,
@@ -472,6 +485,17 @@ export class AuthService {
 
       return createdToken;
     });
+
+    try {
+      await this.emails.sendPasswordResetEmail({
+        to: user.email,
+        token,
+        expiresAt: resetToken.expiresAt,
+      });
+    } catch {
+      await this.deleteUndeliveredPasswordResetToken(resetToken.id);
+      throw new ServiceUnavailableException('Password reset email could not be delivered. Please retry later.');
+    }
 
     return {
       accepted: true,
@@ -644,6 +668,24 @@ export class AuthService {
       data: {
         revokedAt: new Date(),
         revokedReason,
+      },
+    });
+  }
+
+  private async deleteUndeliveredInvite(inviteId: string) {
+    await this.prisma.userInvite.deleteMany({
+      where: {
+        id: inviteId,
+        acceptedAt: null,
+      },
+    });
+  }
+
+  private async deleteUndeliveredPasswordResetToken(resetTokenId: string) {
+    await this.prisma.passwordResetToken.deleteMany({
+      where: {
+        id: resetTokenId,
+        usedAt: null,
       },
     });
   }
