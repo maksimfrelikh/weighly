@@ -139,7 +139,7 @@ export class ProductsService {
       return { product: this.toProductResponse(product, 0) };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Product defaultPluCode already exists');
+        throw new ConflictException('Товар с таким PLU уже существует');
       }
 
       throw error;
@@ -182,7 +182,7 @@ export class ProductsService {
     }
 
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('At least one product field is required');
+      throw new BadRequestException('Укажите хотя бы одно поле товара');
     }
 
     const activePlacementCount = await this.countActivePlacements(product.id);
@@ -247,7 +247,7 @@ export class ProductsService {
       };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Product defaultPluCode already exists');
+        throw new ConflictException('Товар с таким PLU уже существует');
       }
 
       throw error;
@@ -256,12 +256,12 @@ export class ProductsService {
 
   private async findProductById(productId: string): Promise<ProductRecord> {
     if (!productId) {
-      throw new BadRequestException('Product id is required');
+      throw new BadRequestException('ID товара обязателен');
     }
 
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Товар не найден');
     }
 
     return product;
@@ -279,7 +279,7 @@ export class ProductsService {
   private requireDefaultPluCode(defaultPluCode: string): string {
     const normalizedValue = typeof defaultPluCode === 'string' ? defaultPluCode.trim().toUpperCase() : '';
     if (!normalizedValue || normalizedValue.length > 64) {
-      throw new BadRequestException('Product defaultPluCode is required and must be at most 64 characters');
+      throw new BadRequestException('PLU товара обязателен и должен быть не длиннее 64 символов');
     }
 
     return normalizedValue;
@@ -288,7 +288,7 @@ export class ProductsService {
   private requireName(name: string): string {
     const normalizedValue = typeof name === 'string' ? name.trim() : '';
     if (!normalizedValue || normalizedValue.length > 255) {
-      throw new BadRequestException('Product name is required and must be at most 255 characters');
+      throw new BadRequestException('Название товара обязательно и должно быть не длиннее 255 символов');
     }
 
     return normalizedValue;
@@ -297,7 +297,7 @@ export class ProductsService {
   private requireShortName(shortName: string): string {
     const normalizedValue = typeof shortName === 'string' ? shortName.trim() : '';
     if (!normalizedValue || normalizedValue.length > 128) {
-      throw new BadRequestException('Product shortName is required and must be at most 128 characters');
+      throw new BadRequestException('Короткое название товара обязательно и должно быть не длиннее 128 символов');
     }
 
     return normalizedValue;
@@ -308,7 +308,7 @@ export class ProductsService {
       return unit;
     }
 
-    throw new BadRequestException('Product unit must be kg, g, or piece');
+    throw new BadRequestException('Единица товара должна быть kg, g или piece');
   }
 
   private requireProductStatus(status: string): 'active' | 'inactive' | 'archived' {
@@ -316,7 +316,7 @@ export class ProductsService {
       return status;
     }
 
-    throw new BadRequestException('Product status must be active, inactive, or archived');
+    throw new BadRequestException('Статус товара должен быть active, inactive или archived');
   }
 
   private normalizeOptionalString(value: string | undefined): string | null {
@@ -327,7 +327,7 @@ export class ProductsService {
   private getUsedProductWarning(activePlacementCount: number) {
     return {
       code: 'PRODUCT_USED_IN_ACTIVE_CATALOG_PLACEMENTS',
-      message: 'Product is used in active catalog placements; catalog consumers may be affected by this update.',
+      message: 'Товар используется в активных размещениях каталога; изменение может повлиять на потребителей каталога.',
       activePlacementCount,
     };
   }

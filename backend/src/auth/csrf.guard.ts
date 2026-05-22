@@ -29,7 +29,7 @@ export class CsrfGuard implements CanActivate {
     const headerToken = getHeader(request, this.csrfService.getHeaderName());
     if (!this.csrfService.tokensMatch(cookieToken, headerToken)) {
       throw new ForbiddenException({
-        message: 'CSRF token required or invalid',
+        message: 'Сессия формы истекла. Обновите страницу и повторите действие.',
         error: 'Forbidden',
         code: 'CSRF_TOKEN_INVALID',
         statusCode: 403,

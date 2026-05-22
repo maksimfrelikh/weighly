@@ -18,7 +18,7 @@ function configService(nodeEnv = 'production') {
         authFailedLoginLockMinutes: 10,
         frontendOrigin: 'https://example.test',
         emailProvider: 'resend',
-        emailFrom: 'Scale Admin <invites@maksimfrelikh.ru>',
+        emailFrom: 'Администратор весов <invites@maksimfrelikh.ru>',
         emailReplyTo: 'frelikhmax@gmail.com',
         resendApiKey: 're_test_placeholder',
       };
@@ -75,7 +75,7 @@ async function testInviteCleanupOnDeliveryFailure() {
     }, 'actor-id', {}),
     (error) => {
       assert.ok(error instanceof ServiceUnavailableException);
-      assert.match(error.message, /Invite email could not be delivered/);
+      assert.match(error.message, /Не удалось отправить письмо с приглашением/);
       return true;
     },
   );
@@ -127,7 +127,7 @@ async function testPasswordResetCleanupOnDeliveryFailure() {
     () => auth.requestPasswordReset('admin@example.test', {}),
     (error) => {
       assert.ok(error instanceof ServiceUnavailableException);
-      assert.match(error.message, /Password reset email could not be delivered/);
+      assert.match(error.message, /Не удалось отправить письмо для сброса пароля/);
       return true;
     },
   );

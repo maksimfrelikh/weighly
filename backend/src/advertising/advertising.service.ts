@@ -139,7 +139,7 @@ export class AdvertisingService {
     }
 
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('At least one banner field is required');
+      throw new BadRequestException('Укажите хотя бы одно поле баннера');
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -175,12 +175,12 @@ export class AdvertisingService {
 
   async reorderBanners(storeId: string, input: ReorderBannersInput, actorUserId: string, context: RequestContext) {
     if (!Array.isArray(input.bannerIds) || input.bannerIds.length === 0) {
-      throw new BadRequestException('bannerIds must contain at least one banner id');
+      throw new BadRequestException('bannerIds должен содержать хотя бы один ID баннера');
     }
 
-    const bannerIds = input.bannerIds.map((id) => this.requireId(id, 'Banner id is required'));
+    const bannerIds = input.bannerIds.map((id) => this.requireId(id, 'ID баннера обязателен'));
     if (new Set(bannerIds).size !== bannerIds.length) {
-      throw new BadRequestException('bannerIds must not contain duplicates');
+      throw new BadRequestException('bannerIds не должен содержать дубликаты');
     }
 
     const existing = await this.prisma.advertisingBanner.findMany({
@@ -188,7 +188,7 @@ export class AdvertisingService {
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
     if (existing.length !== bannerIds.length) {
-      throw new NotFoundException('One or more banners not found for store');
+      throw new NotFoundException('Один или несколько баннеров не найдены для магазина');
     }
 
     const beforeById = new Map(existing.map((banner) => [banner.id, banner]));
@@ -222,10 +222,10 @@ export class AdvertisingService {
   }
 
   private async findBanner(storeId: string, bannerId: string): Promise<BannerRecord> {
-    const id = this.requireId(bannerId, 'Banner id is required');
+    const id = this.requireId(bannerId, 'ID баннера обязателен');
     const banner = await this.prisma.advertisingBanner.findFirst({ where: { id, storeId } });
     if (!banner) {
-      throw new NotFoundException('Banner not found for store');
+      throw new NotFoundException('Баннер не найден для магазина');
     }
     return banner;
   }
@@ -240,14 +240,14 @@ export class AdvertisingService {
 
   private requireBannerStatus(status: string): BannerStatus {
     if (!Object.values(BannerStatus).includes(status as BannerStatus)) {
-      throw new BadRequestException('Unsupported banner status');
+      throw new BadRequestException('Статус баннера не поддерживается');
     }
     return status as BannerStatus;
   }
 
   private requireSortOrder(sortOrder: number): number {
     if (!Number.isInteger(sortOrder) || sortOrder < 0) {
-      throw new BadRequestException('sortOrder must be a non-negative integer');
+      throw new BadRequestException('sortOrder должен быть неотрицательным целым числом');
     }
     return sortOrder;
   }

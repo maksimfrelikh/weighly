@@ -183,7 +183,7 @@ export class PricesService {
     context: RequestContext,
   ) {
     const catalog = await this.findActiveCatalog(storeId);
-    const productId = this.normalizeRequiredId(input.productId, 'Product id is required');
+    const productId = this.normalizeRequiredId(input.productId, 'ID товара обязателен');
     const price = this.requirePrice(input.price);
     const currency = this.requireCurrency(input.currency ?? 'RUB');
 
@@ -237,7 +237,7 @@ export class PricesService {
   }
 
   private async findActiveCatalog(storeId: string): Promise<ActiveCatalogRecord> {
-    const normalizedStoreId = this.normalizeRequiredId(storeId, 'Store id is required');
+    const normalizedStoreId = this.normalizeRequiredId(storeId, 'ID магазина обязателен');
     const catalog = await this.prisma.storeCatalog.findFirst({
       where: { storeId: normalizedStoreId, status: 'active' },
       orderBy: { createdAt: 'asc' },
@@ -245,7 +245,7 @@ export class PricesService {
     });
 
     if (!catalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     return catalog;
@@ -257,7 +257,7 @@ export class PricesService {
       select: { id: true, status: true },
     });
     if (!category || category.status !== 'active') {
-      throw new BadRequestException('Active category not found in active catalog');
+      throw new BadRequestException('Активная категория не найдена в активном каталоге');
     }
   }
 
@@ -274,14 +274,14 @@ export class PricesService {
     });
 
     if (!placement) {
-      throw new BadRequestException('Product must be active and placed in the active catalog before setting a price');
+      throw new BadRequestException('Перед назначением цены товар должен быть активен и размещён в активном каталоге');
     }
   }
 
   private requirePrice(price: number): Prisma.Decimal {
     const value = typeof price === 'number' ? price : Number(price);
     if (!Number.isFinite(value) || value <= 0) {
-      throw new BadRequestException('Price must be greater than 0');
+      throw new BadRequestException('Цена должна быть больше 0');
     }
 
     return new Prisma.Decimal(value.toFixed(2));
@@ -291,7 +291,7 @@ export class PricesService {
     const normalized = typeof currency === 'string' ? currency.trim().toUpperCase() : '';
     if (!ALLOWED_CURRENCIES.includes(normalized as AllowedCurrency)) {
       throw new BadRequestException({
-        message: 'Currency not supported',
+        message: 'Валюта не поддерживается',
         code: 'PRICE_CURRENCY_NOT_SUPPORTED',
         allowedCurrencies: ALLOWED_CURRENCIES,
         received: normalized || null,
@@ -313,7 +313,7 @@ export class PricesService {
       return false;
     }
 
-    throw new BadRequestException(`${fieldName} must be true or false`);
+    throw new BadRequestException(`${fieldName} должно быть true или false`);
   }
 
   private normalizeOptionalString(value: string | undefined): string | undefined {

@@ -44,7 +44,7 @@ async function testRequireCurrencyRejectsNonRub() {
     (error) => {
       assert.ok(error instanceof BadRequestException, 'expected BadRequestException');
       const body = error.getResponse();
-      assert.equal(body.message, 'Currency not supported');
+      assert.equal(body.message, 'Валюта не поддерживается');
       assert.equal(body.code, 'PRICE_CURRENCY_NOT_SUPPORTED');
       assert.deepEqual(body.allowedCurrencies, ALLOWED_CURRENCIES);
       assert.equal(body.received, 'USD');

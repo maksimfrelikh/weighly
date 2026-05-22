@@ -148,7 +148,7 @@ export class ScalesService {
       };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Scale device code already exists');
+        throw new ConflictException('Код устройства весов уже существует');
       }
 
       throw error;
@@ -246,7 +246,7 @@ export class ScalesService {
     if (device.status !== 'active') {
       await this.writeScaleAuthFailureLog(device.id, device.storeId, `device_${device.status}`, context);
       throw new ForbiddenException({
-        message: 'Scale device is not allowed to sync',
+        message: 'Устройству весов запрещена синхронизация',
         error: 'Forbidden',
         code: 'SCALE_DEVICE_NOT_ACTIVE',
         statusCode: 403,
@@ -303,7 +303,7 @@ export class ScalesService {
     });
 
     if (!activeCatalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     let requestedVersionId: string | null = normalizedRequestedVersionId;
@@ -314,7 +314,7 @@ export class ScalesService {
         select: { id: true },
       });
       if (!existingVersion) {
-        unknownRequestedVersionMessage = `unknown requestedVersionId: ${requestedVersionId}`;
+        unknownRequestedVersionMessage = `Неизвестная версия каталога в requestedVersionId: ${requestedVersionId}`;
         requestedVersionId = null;
       }
     }
@@ -324,7 +324,7 @@ export class ScalesService {
     const hasUpdate = Boolean(currentVersionId && requestedVersionId !== currentVersionId);
     const deliveryVersion = hasUpdate ? currentVersion : null;
     if (hasUpdate && !deliveryVersion) {
-      throw new NotFoundException('Current catalog version not found');
+      throw new NotFoundException('Текущая версия каталога не найдена');
     }
 
     const logStatus: ScaleSyncStatus = hasUpdate ? 'package_delivered' : 'no_update';
@@ -357,7 +357,7 @@ export class ScalesService {
     }
 
     if (!deliveryVersion) {
-      throw new NotFoundException('Current catalog version not found');
+      throw new NotFoundException('Текущая версия каталога не найдена');
     }
 
     return {
@@ -380,7 +380,7 @@ export class ScalesService {
       select: { id: true, versionNumber: true, packageChecksum: true },
     });
     if (!catalogVersion) {
-      throw new NotFoundException('Catalog version not found');
+      throw new NotFoundException('Версия каталога не найдена');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -460,12 +460,12 @@ export class ScalesService {
 
   private async findStoreById(storeId: string) {
     if (!storeId) {
-      throw new BadRequestException('Store id is required');
+      throw new BadRequestException('ID магазина обязателен');
     }
 
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store || store.status === 'archived') {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Магазин не найден');
     }
 
     return store;
@@ -473,12 +473,12 @@ export class ScalesService {
 
   private async findDeviceById(deviceId: string): Promise<ScaleDeviceRecord> {
     if (!deviceId) {
-      throw new BadRequestException('Scale device id is required');
+      throw new BadRequestException('ID устройства весов обязателен');
     }
 
     const device = await this.prisma.scaleDevice.findUnique({ where: { id: deviceId } });
     if (!device) {
-      throw new NotFoundException('Scale device not found');
+      throw new NotFoundException('Устройство весов не найдено');
     }
 
     return device;
@@ -487,7 +487,7 @@ export class ScalesService {
   private requireDeviceCode(deviceCode: string): string {
     const normalizedCode = typeof deviceCode === 'string' ? deviceCode.trim().toUpperCase() : '';
     if (!normalizedCode || normalizedCode.length > 128) {
-      throw new BadRequestException('Device code is required and must be at most 128 characters');
+      throw new BadRequestException('Код устройства обязателен и должен быть не длиннее 128 символов');
     }
 
     return normalizedCode;
@@ -496,7 +496,7 @@ export class ScalesService {
   private requireName(name: string): string {
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     if (!normalizedName || normalizedName.length > 255) {
-      throw new BadRequestException('Device name is required and must be at most 255 characters');
+      throw new BadRequestException('Название устройства обязательно и должно быть не длиннее 255 символов');
     }
 
     return normalizedName;
@@ -507,7 +507,7 @@ export class ScalesService {
       return status;
     }
 
-    throw new BadRequestException('Scale device status must be active, inactive, blocked, or archived');
+    throw new BadRequestException('Статус устройства весов должен быть active, inactive, blocked или archived');
   }
 
   private normalizeOptionalUuid(value: string | undefined, fieldName: string): string | null {
@@ -522,11 +522,11 @@ export class ScalesService {
   private requireUuid(value: string | undefined, fieldName: string): string {
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     if (!normalizedValue) {
-      throw new BadRequestException(`${fieldName} is required`);
+      throw new BadRequestException(`${fieldName} обязателен`);
     }
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedValue)) {
-      throw new BadRequestException(`${fieldName} must be a valid UUID`);
+      throw new BadRequestException(`${fieldName} должен быть корректным UUID`);
     }
 
     return normalizedValue;
@@ -537,7 +537,7 @@ export class ScalesService {
       return status;
     }
 
-    throw new BadRequestException('ACK status must be success or error');
+    throw new BadRequestException('Статус ACK должен быть success или error');
   }
 
   private normalizeErrorMessage(errorMessage: string | undefined): string | null {

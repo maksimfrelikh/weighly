@@ -29,7 +29,7 @@ export class ScaleApiAuthGuard implements CanActivate {
     const result = await this.scalesService.authenticateScaleApiRequest(deviceCode, apiToken, this.getRequestContext(request));
     if (!result.authenticated) {
       throw new UnauthorizedException({
-        message: 'Scale API authorization failed',
+        message: 'Авторизация Scale API не выполнена',
         error: 'Unauthorized',
         code: 'SCALE_API_AUTH_FAILED',
         statusCode: 401,

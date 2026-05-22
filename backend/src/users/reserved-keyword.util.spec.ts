@@ -65,7 +65,7 @@ describe('isReservedUserIdKeyword (BUG-REG-058)', () => {
       const message = reservedUserIdMessage('me');
       assert.match(message, /'me'/);
       assert.match(message, /\/api\/auth\/session/);
-      assert.match(message, /reserved keyword/i);
+      assert.match(message, /зарезервированное слово/i);
     });
   });
 });

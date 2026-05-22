@@ -95,7 +95,7 @@ export class StoresService {
     ]);
 
     if (!activeCatalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     return {
@@ -143,7 +143,7 @@ export class StoresService {
 
     const existingStore = await this.prisma.store.findUnique({ where: { code }, select: { id: true } });
     if (existingStore) {
-      throw new ConflictException('Store code already exists');
+      throw new ConflictException('Магазин с таким кодом уже существует');
     }
 
     try {
@@ -163,7 +163,7 @@ export class StoresService {
             ? await tx.storeCatalog.create({
                 data: {
                   storeId: store.id,
-                  name: 'Main catalog',
+                  name: 'Основной каталог',
                   status: 'active',
                 },
               })
@@ -208,7 +208,7 @@ export class StoresService {
       };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Store code already exists');
+        throw new ConflictException('Магазин с таким кодом уже существует');
       }
 
       throw error;
@@ -236,7 +236,7 @@ export class StoresService {
     }
 
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('At least one store field is required');
+      throw new BadRequestException('Укажите хотя бы одно поле магазина');
     }
 
     const isCascadeArchive = data.status === 'archived' && store.status !== 'archived';
@@ -292,7 +292,7 @@ export class StoresService {
       return { store: this.toStoreResponse(updated), cascade: cascadeSummary };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Store code already exists');
+        throw new ConflictException('Магазин с таким кодом уже существует');
       }
 
       throw error;
@@ -301,12 +301,12 @@ export class StoresService {
 
   private async findStoreById(storeId: string): Promise<StoreRecord> {
     if (!storeId) {
-      throw new BadRequestException('Store id is required');
+      throw new BadRequestException('ID магазина обязателен');
     }
 
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store) {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Магазин не найден');
     }
 
     return store;
@@ -315,7 +315,7 @@ export class StoresService {
   private requireCode(code: string): string {
     const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : '';
     if (!normalizedCode || normalizedCode.length > 64) {
-      throw new BadRequestException('Store code is required and must be at most 64 characters');
+      throw new BadRequestException('Код магазина обязателен и должен быть не длиннее 64 символов');
     }
 
     return normalizedCode;
@@ -324,7 +324,7 @@ export class StoresService {
   private requireName(name: string): string {
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     if (!normalizedName || normalizedName.length > 255) {
-      throw new BadRequestException('Store name is required and must be at most 255 characters');
+      throw new BadRequestException('Название магазина обязательно и должно быть не длиннее 255 символов');
     }
 
     return normalizedName;
@@ -333,7 +333,7 @@ export class StoresService {
   private requireTimezone(timezone: string | undefined): string {
     const normalizedTimezone = typeof timezone === 'string' && timezone.trim() ? timezone.trim() : 'Europe/Moscow';
     if (normalizedTimezone.length > 128) {
-      throw new BadRequestException('Store timezone must be at most 128 characters');
+      throw new BadRequestException('Часовой пояс магазина должен быть не длиннее 128 символов');
     }
 
     return normalizedTimezone;
@@ -344,7 +344,7 @@ export class StoresService {
       return status;
     }
 
-    throw new BadRequestException('Store status must be active, inactive, or archived');
+    throw new BadRequestException('Статус магазина должен быть active, inactive или archived');
   }
 
   private normalizeOptionalString(value: string | undefined): string | null {

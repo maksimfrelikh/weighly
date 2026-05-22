@@ -92,7 +92,7 @@ export class CatalogPublishingService {
     const validation = await this.catalogValidationService.validateActiveCatalog(storeId);
     if (!validation.canPublish) {
       throw new BadRequestException({
-        message: 'Catalog has blocking validation errors and cannot be published',
+        message: 'В каталоге есть блокирующие ошибки проверки, поэтому его нельзя опубликовать',
         validation,
       });
     }
@@ -196,7 +196,7 @@ export class CatalogPublishingService {
   private normalizeRequiredId(id: string): string {
     const normalized = id?.trim();
     if (!normalized) {
-      throw new BadRequestException('Store id is required');
+      throw new BadRequestException('ID магазина обязателен');
     }
     return normalized;
   }

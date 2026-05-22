@@ -139,10 +139,10 @@ export class CatalogService {
   async createCategory(storeId: string, input: CreateCategoryInput, actorUserId: string, context: RequestContext) {
     const catalog = await this.findActiveCatalog(storeId);
     const parentId = this.normalizeOptionalId(input.parentId);
-    const parent = parentId ? await this.findCategoryInCatalog(catalog.id, parentId, 'Parent category not found in active catalog') : null;
+    const parent = parentId ? await this.findCategoryInCatalog(catalog.id, parentId, 'Родительская категория не найдена в активном каталоге') : null;
     const depth = parent ? (await this.getCategoryDepth(catalog.id, parent.id)) + 1 : 1;
     if (depth > MAX_CATEGORY_DEPTH) {
-      throw new BadRequestException(`Category depth cannot exceed ${MAX_CATEGORY_DEPTH} levels`);
+      throw new BadRequestException(`Глубина категории не может превышать ${MAX_CATEGORY_DEPTH} уровней`);
     }
 
     const data: Prisma.CategoryUncheckedCreateInput = {
@@ -186,7 +186,7 @@ export class CatalogService {
     context: RequestContext,
   ) {
     const catalog = await this.findActiveCatalog(storeId);
-    const category = await this.findCategoryInCatalog(catalog.id, categoryId, 'Category not found in active catalog');
+    const category = await this.findCategoryInCatalog(catalog.id, categoryId, 'Категория не найдена в активном каталоге');
     const data: Prisma.CategoryUncheckedUpdateInput = {};
     let action = 'category.updated';
 
@@ -207,30 +207,30 @@ export class CatalogService {
     if (input.parentId !== undefined) {
       const nextParentId = this.normalizeOptionalId(input.parentId);
       if (nextParentId === category.id) {
-        throw new BadRequestException('Category cannot be its own parent');
+        throw new BadRequestException('Категория не может быть родительской для самой себя');
       }
       if (nextParentId) {
-        const parent = await this.findCategoryInCatalog(catalog.id, nextParentId, 'Parent category not found in active catalog');
+        const parent = await this.findCategoryInCatalog(catalog.id, nextParentId, 'Родительская категория не найдена в активном каталоге');
         const isDescendant = await this.isDescendant(catalog.id, parent.id, category.id);
         if (isDescendant) {
-          throw new BadRequestException('Category parent update would create a cycle');
+          throw new BadRequestException('Изменение родительской категории создаст цикл');
         }
         const subtreeDepth = await this.getSubtreeDepth(catalog.id, category.id);
         const parentDepth = await this.getCategoryDepth(catalog.id, parent.id);
         if (parentDepth + subtreeDepth > MAX_CATEGORY_DEPTH) {
-          throw new BadRequestException(`Category depth cannot exceed ${MAX_CATEGORY_DEPTH} levels`);
+          throw new BadRequestException(`Глубина категории не может превышать ${MAX_CATEGORY_DEPTH} уровней`);
         }
       } else {
         const subtreeDepth = await this.getSubtreeDepth(catalog.id, category.id);
         if (subtreeDepth > MAX_CATEGORY_DEPTH) {
-          throw new BadRequestException(`Category depth cannot exceed ${MAX_CATEGORY_DEPTH} levels`);
+          throw new BadRequestException(`Глубина категории не может превышать ${MAX_CATEGORY_DEPTH} уровней`);
         }
       }
       data.parentId = nextParentId;
     }
 
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('At least one category field is required');
+      throw new BadRequestException('Укажите хотя бы одно поле категории');
     }
 
     const isCascadeArchive = data.status === 'archived' && category.status !== 'archived';
@@ -292,16 +292,16 @@ export class CatalogService {
   async reorderCategories(storeId: string, input: ReorderCategoriesInput, actorUserId: string, context: RequestContext) {
     const catalog = await this.findActiveCatalog(storeId);
     const parentId = this.normalizeOptionalId(input.parentId);
-    const categoryIds = input.categoryIds.map((id) => this.normalizeRequiredId(id, 'Category id is required'));
+    const categoryIds = input.categoryIds.map((id) => this.normalizeRequiredId(id, 'ID категории обязателен'));
     if (categoryIds.length === 0) {
-      throw new BadRequestException('categoryIds must contain at least one category id');
+      throw new BadRequestException('categoryIds должен содержать хотя бы один ID категории');
     }
     if (new Set(categoryIds).size !== categoryIds.length) {
-      throw new BadRequestException('categoryIds cannot contain duplicates');
+      throw new BadRequestException('categoryIds не должен содержать дубликаты');
     }
 
     if (parentId) {
-      await this.findCategoryInCatalog(catalog.id, parentId, 'Parent category not found in active catalog');
+      await this.findCategoryInCatalog(catalog.id, parentId, 'Родительская категория не найдена в активном каталоге');
     }
 
     const categories = await this.prisma.category.findMany({
@@ -314,7 +314,7 @@ export class CatalogService {
     });
 
     if (categories.length !== categoryIds.length) {
-      throw new BadRequestException('All reordered categories must exist in the same catalog and sibling level');
+      throw new BadRequestException('Все категории для сортировки должны быть в одном каталоге и на одном уровне');
     }
 
     const beforeData = categories.map((category) => this.toCategoryAuditData(category));
@@ -363,7 +363,7 @@ export class CatalogService {
     const status = input.status ? this.requirePlacementStatus(input.status) : undefined;
 
     if (categoryId) {
-      await this.findCategoryInCatalog(catalog.id, categoryId, 'Category not found in active catalog');
+      await this.findCategoryInCatalog(catalog.id, categoryId, 'Категория не найдена в активном каталоге');
     }
 
     const placements = await this.prisma.catalogProductPlacement.findMany({
@@ -390,7 +390,7 @@ export class CatalogService {
 
   async createPlacement(storeId: string, input: CreatePlacementInput, actorUserId: string, context: RequestContext) {
     const catalog = await this.findActiveCatalog(storeId);
-    const category = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Category not found in active catalog');
+    const category = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Категория не найдена в активном каталоге');
     const product = await this.findProductById(input.productId);
     const status = this.requirePlacementStatus(input.status ?? 'active');
     this.assertActivePlacementAllowed(status, category, product);
@@ -399,7 +399,7 @@ export class CatalogService {
       status === 'active' ? await this.findActivePlacementForProduct(catalog.id, product.id) : null;
     if (existingActivePlacement) {
       throw new ConflictException({
-        message: 'Product already has an active placement in this catalog; move the existing placement instead',
+        message: 'У товара уже есть активное размещение в этом каталоге. Переместите существующее размещение.',
         code: 'ACTIVE_PLACEMENT_EXISTS',
         moveRequired: true,
         existingPlacement: this.toPlacementResponse(existingActivePlacement),
@@ -454,11 +454,11 @@ export class CatalogService {
     let action = 'placement.updated';
 
     const nextStatus = input.status ? this.requirePlacementStatus(input.status) : placement.status;
-    let nextCategory = placement.category ?? (await this.findCategoryInCatalog(catalog.id, placement.categoryId, 'Category not found in active catalog'));
+    let nextCategory = placement.category ?? (await this.findCategoryInCatalog(catalog.id, placement.categoryId, 'Категория не найдена в активном каталоге'));
     const product = placement.product ?? (await this.findProductById(placement.productId));
 
     if (input.categoryId !== undefined) {
-      nextCategory = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Category not found in active catalog');
+      nextCategory = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Категория не найдена в активном каталоге');
       data.categoryId = nextCategory.id;
       action = 'placement.moved';
     }
@@ -474,7 +474,7 @@ export class CatalogService {
     }
 
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('At least one placement field is required');
+      throw new BadRequestException('Укажите хотя бы одно поле размещения');
     }
 
     this.assertActivePlacementAllowed(nextStatus, nextCategory, product);
@@ -482,7 +482,7 @@ export class CatalogService {
       const existingActivePlacement = await this.findActivePlacementForProduct(catalog.id, product.id, placement.id);
       if (existingActivePlacement) {
         throw new ConflictException({
-          message: 'Product already has another active placement in this catalog',
+          message: 'У товара уже есть другое активное размещение в этом каталоге',
           code: 'ACTIVE_PLACEMENT_EXISTS',
           moveRequired: true,
           existingPlacement: this.toPlacementResponse(existingActivePlacement),
@@ -524,13 +524,13 @@ export class CatalogService {
 
   async reorderPlacements(storeId: string, input: ReorderPlacementsInput, actorUserId: string, context: RequestContext) {
     const catalog = await this.findActiveCatalog(storeId);
-    const category = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Category not found in active catalog');
-    const placementIds = input.placementIds.map((id) => this.normalizeRequiredId(id, 'Placement id is required'));
+    const category = await this.findCategoryInCatalog(catalog.id, input.categoryId, 'Категория не найдена в активном каталоге');
+    const placementIds = input.placementIds.map((id) => this.normalizeRequiredId(id, 'ID размещения обязателен'));
     if (placementIds.length === 0) {
-      throw new BadRequestException('placementIds must contain at least one placement id');
+      throw new BadRequestException('placementIds должен содержать хотя бы один ID размещения');
     }
     if (new Set(placementIds).size !== placementIds.length) {
-      throw new BadRequestException('placementIds cannot contain duplicates');
+      throw new BadRequestException('placementIds не должен содержать дубликаты');
     }
 
     const placements = await this.prisma.catalogProductPlacement.findMany({
@@ -538,7 +538,7 @@ export class CatalogService {
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
     if (placements.length !== placementIds.length) {
-      throw new BadRequestException('All reordered placements must exist in the same catalog and category');
+      throw new BadRequestException('Все размещения для сортировки должны быть в одном каталоге и категории');
     }
 
     const beforeData = placements.map((placement) => this.toPlacementAuditData(placement));
@@ -581,7 +581,7 @@ export class CatalogService {
   }
 
   private async findActiveCatalog(storeId: string): Promise<ActiveCatalogRecord> {
-    const normalizedStoreId = this.normalizeRequiredId(storeId, 'Store id is required');
+    const normalizedStoreId = this.normalizeRequiredId(storeId, 'ID магазина обязателен');
     const catalog = await this.prisma.storeCatalog.findFirst({
       where: { storeId: normalizedStoreId, status: 'active' },
       orderBy: { createdAt: 'asc' },
@@ -589,14 +589,14 @@ export class CatalogService {
     });
 
     if (!catalog) {
-      throw new NotFoundException('Active store catalog not found');
+      throw new NotFoundException('Активный каталог магазина не найден');
     }
 
     return catalog;
   }
 
   private async findCategoryInCatalog(catalogId: string, categoryId: string, message: string): Promise<CategoryRecord> {
-    const normalizedCategoryId = this.normalizeRequiredId(categoryId, 'Category id is required');
+    const normalizedCategoryId = this.normalizeRequiredId(categoryId, 'ID категории обязателен');
     const category = await this.prisma.category.findUnique({
       where: { catalogId_id: { catalogId, id: normalizedCategoryId } },
     });
@@ -615,7 +615,7 @@ export class CatalogService {
 
     while (currentId) {
       if (seen.has(currentId)) {
-        throw new BadRequestException('Category cycle detected');
+        throw new BadRequestException('Обнаружен цикл категорий');
       }
       seen.add(currentId);
       const category: { id: string; parentId: string | null } | null = await this.prisma.category.findUnique({
@@ -623,7 +623,7 @@ export class CatalogService {
         select: { id: true, parentId: true },
       });
       if (!category) {
-        throw new BadRequestException('Category not found in active catalog');
+        throw new BadRequestException('Категория не найдена в активном каталоге');
       }
       depth += 1;
       currentId = category.parentId;
@@ -646,7 +646,7 @@ export class CatalogService {
 
     const walk = (id: string, seen: Set<string>): number => {
       if (seen.has(id)) {
-        throw new BadRequestException('Category cycle detected');
+        throw new BadRequestException('Обнаружен цикл категорий');
       }
       seen.add(id);
       const children = childrenByParent.get(id) ?? [];
@@ -669,7 +669,7 @@ export class CatalogService {
         return true;
       }
       if (seen.has(currentId)) {
-        throw new BadRequestException('Category cycle detected');
+        throw new BadRequestException('Обнаружен цикл категорий');
       }
       seen.add(currentId);
       const category: { parentId: string | null } | null = await this.prisma.category.findUnique({
@@ -684,21 +684,21 @@ export class CatalogService {
 
 
   private async findProductById(productId: string): Promise<ProductRecord> {
-    const normalizedProductId = this.normalizeRequiredId(productId, 'Product id is required');
+    const normalizedProductId = this.normalizeRequiredId(productId, 'ID товара обязателен');
     const product = await this.prisma.product.findUnique({
       where: { id: normalizedProductId },
       select: { id: true, defaultPluCode: true, name: true, shortName: true, status: true },
     });
 
     if (!product) {
-      throw new BadRequestException('Product not found');
+      throw new BadRequestException('Товар не найден');
     }
 
     return product;
   }
 
   private async findPlacementInCatalog(catalogId: string, placementId: string): Promise<PlacementRecord> {
-    const normalizedPlacementId = this.normalizeRequiredId(placementId, 'Placement id is required');
+    const normalizedPlacementId = this.normalizeRequiredId(placementId, 'ID размещения обязателен');
     const placement = await this.prisma.catalogProductPlacement.findFirst({
       where: { id: normalizedPlacementId, catalogId },
       include: {
@@ -708,7 +708,7 @@ export class CatalogService {
     });
 
     if (!placement) {
-      throw new NotFoundException('Placement not found in active catalog');
+      throw new NotFoundException('Размещение не найдено в активном каталоге');
     }
 
     return placement;
@@ -734,10 +734,10 @@ export class CatalogService {
       return;
     }
     if (product.status !== 'active') {
-      throw new BadRequestException('Archived or inactive product cannot be used for an active placement');
+      throw new BadRequestException('Архивный или неактивный товар нельзя использовать в активном размещении');
     }
     if (category.status !== 'active') {
-      throw new BadRequestException('Archived or inactive category cannot be used for an active placement');
+      throw new BadRequestException('Архивную или неактивную категорию нельзя использовать в активном размещении');
     }
   }
 
@@ -771,7 +771,7 @@ export class CatalogService {
   private requireName(name: string): string {
     const normalizedValue = typeof name === 'string' ? name.trim() : '';
     if (!normalizedValue || normalizedValue.length > 255) {
-      throw new BadRequestException('Category name is required and must be at most 255 characters');
+      throw new BadRequestException('Название категории обязательно и должно быть не длиннее 255 символов');
     }
 
     return normalizedValue;
@@ -780,7 +780,7 @@ export class CatalogService {
   private requireShortName(shortName: string): string {
     const normalizedValue = typeof shortName === 'string' ? shortName.trim() : '';
     if (!normalizedValue || normalizedValue.length > 128) {
-      throw new BadRequestException('Category shortName is required and must be at most 128 characters');
+      throw new BadRequestException('Короткое название категории обязательно и должно быть не длиннее 128 символов');
     }
 
     return normalizedValue;
@@ -788,7 +788,7 @@ export class CatalogService {
 
   private requireSortOrder(sortOrder: number): number {
     if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 1_000_000) {
-      throw new BadRequestException('Category sortOrder must be an integer between 0 and 1000000');
+      throw new BadRequestException('sortOrder категории должен быть целым числом от 0 до 1000000');
     }
 
     return sortOrder;
@@ -797,7 +797,7 @@ export class CatalogService {
   private requireCategoryStatus(status: string): CategoryStatus {
     const normalizedValue = typeof status === 'string' ? status.trim().toLowerCase() : '';
     if (!['active', 'inactive', 'archived'].includes(normalizedValue)) {
-      throw new BadRequestException('Category status must be active, inactive, or archived');
+      throw new BadRequestException('Статус категории должен быть active, inactive или archived');
     }
 
     return normalizedValue as CategoryStatus;
@@ -806,7 +806,7 @@ export class CatalogService {
   private requirePlacementStatus(status: string): PlacementStatus {
     const normalizedValue = typeof status === 'string' ? status.trim().toLowerCase() : '';
     if (!['active', 'inactive', 'archived'].includes(normalizedValue)) {
-      throw new BadRequestException('Placement status must be active, inactive, or archived');
+      throw new BadRequestException('Статус размещения должен быть active, inactive или archived');
     }
 
     return normalizedValue as PlacementStatus;
