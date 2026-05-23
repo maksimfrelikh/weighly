@@ -8,6 +8,7 @@ import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
 import { HealthController } from './health.controller';
 import { LogsModule } from './logs/logs.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { PricesModule } from './prices/prices.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
@@ -36,6 +37,7 @@ import { VersionController } from './version.controller';
     LogsModule,
     FilesModule,
     EmailModule,
+    MetricsModule,
   ],
   controllers: [HealthController, VersionController],
 })
