@@ -46,6 +46,7 @@ const backendMessageTranslations: Record<string, string> = {
   'Password reset token has expired': 'Срок действия ссылки для сброса пароля истёк. Запросите новую ссылку.',
   'Password must be at least 8 characters': 'Пароль должен содержать минимум 8 символов.',
   'Valid email is required': 'Введите корректный email.',
+  'Internal server error': 'Внутренняя ошибка сервера. Попробуйте позже.',
 };
 
 function translateBackendMessage(message: string | undefined): string | undefined {
