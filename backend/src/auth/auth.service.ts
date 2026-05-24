@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
 import { EmailService } from '../email/email.service';
 import type { AppConfiguration } from '../config/app.config';
+import { DUMMY_CREDENTIAL } from './dummy-credential';
 import { hashPassword, verifyPassword } from './password.util';
 import { createSessionToken, hashSessionToken } from './session-token.util';
 import { createInviteToken, hashInviteToken } from './invite-token.util';
@@ -101,6 +102,10 @@ export class AuthService {
     });
 
     if (!user || user.status !== 'active' || !user.credential) {
+      // Burn the same pbkdf2 work as the existing-user path so response
+      // latency does not leak account-existence (BUG-REG-068). Result is
+      // ignored — this path always 401s.
+      verifyPassword(password, DUMMY_CREDENTIAL);
       await this.logLoginAttempt(null, normalizedEmail, false, 'invalid_credentials', context);
       throw new UnauthorizedException('Неверный email или пароль');
     }
