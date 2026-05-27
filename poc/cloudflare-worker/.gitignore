@@ -1,0 +1,13 @@
+node_modules/
+.wrangler/
+dist/
+*.log
+.dev.vars
+.env
+
+# Prisma client is generated (regenerate with `npm run generate`); not committed for a PoC.
+src/generated/
+
+# Local Prisma CLI shadow/dev sqlite (worker itself uses D1, not these files).
+prisma/*.db
+prisma/*.db-journal

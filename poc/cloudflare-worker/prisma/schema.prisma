@@ -1,0 +1,45 @@
+// PoC schema. Mirrors the multi-tenant composite-FK pattern the real catalog uses:
+// a category's parent must live in the SAME store (FK on [storeId, parentId] -> [storeId, id]).
+// Provider is sqlite because D1 is SQLite-compatible; the worker connects via @prisma/adapter-d1.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  runtime  = "workerd"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model PocUser {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  passwordHashParams Json
+  createdAt          DateTime @default(now())
+}
+
+model PocStore {
+  id         String        @id @default(uuid())
+  code       String        @unique
+  name       String
+  categories PocCategory[]
+}
+
+model PocCategory {
+  id       String  @id @default(uuid())
+  storeId  String
+  parentId String?
+  name     String
+
+  // Plain FK: category belongs to a store.
+  store PocStore @relation(fields: [storeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Composite self-FK: parent must be a category in the SAME store.
+  // Target [storeId, id] is backed by the @@unique below.
+  parent   PocCategory?  @relation("CategoryParent", fields: [storeId, parentId], references: [storeId, id], onDelete: NoAction, onUpdate: NoAction)
+  children PocCategory[] @relation("CategoryParent")
+
+  @@unique([storeId, id])
+}

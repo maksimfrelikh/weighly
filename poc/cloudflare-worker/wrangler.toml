@@ -1,0 +1,13 @@
+# Throwaway PoC worker. Local-only: `wrangler dev --local` (miniflare D1). Do NOT deploy.
+name = "poc-cloudflare-worker"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Single D1 binding named DB, per brief. database_id is a placeholder; --local never
+# connects to remote D1, it uses a local SQLite file under .wrangler/state/.
+[[d1_databases]]
+binding = "DB"
+database_name = "poc-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

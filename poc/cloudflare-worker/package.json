@@ -1,0 +1,25 @@
+{
+  "name": "poc-cloudflare-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway PoC: Cloudflare Workers + D1 + Hono + Prisma + WebCrypto. Validates the migration stack. NOT production.",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:diff": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
+    "migrate:apply:local": "wrangler d1 migrations apply DB --local",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-d1": "7.8.0",
+    "@prisma/client": "7.8.0",
+    "hono": "^4.12.23"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260527.1",
+    "prisma": "7.8.0",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.95.0"
+  }
+}
