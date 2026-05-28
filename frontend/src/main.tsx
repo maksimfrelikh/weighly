@@ -2015,6 +2015,7 @@ function existingPlacementFromError(error: unknown): CatalogProductPlacement | n
 }
 
 function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: string; userRole: AuthUser['role']; currentVersionId: string | null }) {
+  const { t } = useTranslation('scales');
   const isAdmin = userRole === 'admin';
   const { data, error, isLoading, isFetching, refetch } = useListScaleDevicesQuery(storeId);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
@@ -2033,7 +2034,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+      throw new Error(t('errors.csrf'));
     }
     return csrfData;
   }
@@ -2048,7 +2049,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     const trimmedName = name.trim();
     const trimmedModel = model.trim();
     if (!trimmedCode || !trimmedName) {
-      setFormError('Укажите код и название весов.');
+      setFormError(t('form.errors.missingFields'));
       return;
     }
 
@@ -2075,7 +2076,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось зарегистрировать весы.';
+        : t('errors.createFailed');
       setFormError(message);
     }
   }
@@ -2095,7 +2096,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось заблокировать весы.';
+        : t('errors.blockFailed');
       setActionError(message);
     }
   }
@@ -2120,7 +2121,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось перевыпустить токен весов.';
+        : t('errors.regenerateFailed');
       setActionError(message);
     }
   }
@@ -2129,30 +2130,30 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     <section className="scale-devices-tab" aria-labelledby="scale-devices-title">
       <div className="panel-heading scale-devices-heading">
         <div>
-          <p className="eyebrow">Весы</p>
-          <h3 id="scale-devices-title">Весы магазина</h3>
-          <p className="muted">{isAdmin ? 'Регистрируйте устройства, блокируйте доступ и перевыпускайте API-токены.' : 'Статус публикации и синхронизации для этого магазина.'}</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="scale-devices-title">{t('tab.title')}</h3>
+          <p className="muted">{isAdmin ? t('tab.description.admin') : t('tab.description.operator')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить весы'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
       {isAdmin && (
         <form className="scale-device-form" onSubmit={handleCreate}>
           <label>
-            Код весов
+            {t('form.fields.deviceCode')}
             <input value={deviceCode} onChange={(event) => setDeviceCode(event.target.value)} placeholder="SCALE-001" />
           </label>
           <label>
-            Название
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Весы у кассы" />
+            {t('form.fields.name')}
+            <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t('form.placeholders.name')} />
           </label>
           <label>
-            Модель
-            <input value={model} onChange={(event) => setModel(event.target.value)} placeholder="Необязательная модель" />
+            {t('form.fields.model')}
+            <input value={model} onChange={(event) => setModel(event.target.value)} placeholder={t('form.placeholders.model')} />
           </label>
-          <button type="submit" disabled={creating}>{creating ? 'Регистрируем...' : 'Зарегистрировать весы'}</button>
+          <button type="submit" disabled={creating}>{creating ? t('form.submitting') : t('form.submit')}</button>
         </form>
       )}
 
@@ -2160,30 +2161,30 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
       {issuedToken && (
         <div className="token-notice" role="status">
-          <strong>API-токен для {issuedToken.deviceCode} {issuedToken.action === 'created' ? 'создан' : 'перевыпущен'}.</strong>
-          <span>Скопируйте его сейчас. Токен показывается только один раз и не хранится в интерфейсе.</span>
+          <strong>{t('token.heading', { code: issuedToken.deviceCode, context: issuedToken.action })}</strong>
+          <span>{t('token.warning')}</span>
           <code>{issuedToken.apiToken}</code>
-          <button className="secondary-button" type="button" onClick={() => setIssuedToken(null)}>Скрыть токен</button>
+          <button className="secondary-button" type="button" onClick={() => setIssuedToken(null)}>{t('token.hide')}</button>
         </div>
       )}
 
-      {isLoading && <div className="status status-loading">Загружаем весы...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && devices.length === 0 && <div className="empty-state">Для этого магазина весы ещё не зарегистрированы.</div>}
+      {!isLoading && !errorMessage && devices.length === 0 && <div className="empty-state">{t('tab.empty')}</div>}
       {devices.length > 0 && (
         <div className="scale-device-table-wrap">
           <table className="scale-device-table">
             <thead>
               <tr>
-                <th>Код весов</th>
-                {isAdmin && <th>Название</th>}
-                {isAdmin && <th>Модель</th>}
-                <th>Статус</th>
-                <th>Последний контакт</th>
-                <th>Последняя синхронизация</th>
-                <th>Версия каталога</th>
-                <th>Статус синхронизации</th>
-                {isAdmin && <th>Действия</th>}
+                <th>{t('columns.deviceCode')}</th>
+                {isAdmin && <th>{t('columns.name')}</th>}
+                {isAdmin && <th>{t('columns.model')}</th>}
+                <th>{t('columns.status')}</th>
+                <th>{t('columns.lastSeenAt')}</th>
+                <th>{t('columns.lastSyncAt')}</th>
+                <th>{t('columns.catalogVersion')}</th>
+                <th>{t('columns.syncStatus')}</th>
+                {isAdmin && <th>{t('columns.actions')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -2200,17 +2201,17 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
                     <td>{formatDateTime(device.lastSyncAt)}</td>
                     <td>
                       <code>{device.currentCatalogVersionId ?? '—'}</code>
-                      {isOutdated && <span className="sync-note">Не обновлены до текущей версии</span>}
+                      {isOutdated && <span className="sync-note">{t('row.outdatedNote')}</span>}
                     </td>
                     <td><ScaleSyncStatusCell device={device} /></td>
                     {isAdmin && (
                       <td>
                         <div className="table-actions">
                           <button className="secondary-button" type="button" onClick={() => handleBlock(device)} disabled={updatingStatus || device.status === 'blocked'}>
-                            {device.status === 'blocked' ? 'Заблокированы' : 'Заблокировать'}
+                            {device.status === 'blocked' ? t('row.blocked') : t('row.block')}
                           </button>
                           <button className="secondary-button" type="button" onClick={() => handleRegenerate(device)} disabled={regenerating}>
-                            Перевыпустить токен
+                            {t('row.regenerateToken')}
                           </button>
                         </div>
                       </td>
@@ -2231,11 +2232,12 @@ function ScaleDeviceStatusBadge({ status }: { status: ScaleDeviceStatus }) {
 }
 
 function ScaleSyncStatusCell({ device }: { device: ScaleDevice }) {
+  const { t } = useTranslation('scales');
   if (device.lastSyncError) {
     return (
       <div className="sync-status sync-status-error">
         <span className="badge badge-sync-error">{formatSyncStatusLabel(device.lastSyncError.status)}</span>
-        <small>{device.lastSyncError.message || 'Весы сообщили об ошибке синхронизации.'}</small>
+        <small>{device.lastSyncError.message || t('syncError.fallbackMessage')}</small>
         <small>{formatDateTime(device.lastSyncError.createdAt)}</small>
       </div>
     );

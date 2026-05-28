@@ -1,1 +1,62 @@
-{}
+{
+  "tab": {
+    "eyebrow": "Scales",
+    "title": "Store scales",
+    "description": {
+      "admin": "Register devices, block access, and regenerate API tokens.",
+      "operator": "Publication and synchronization status for this store."
+    },
+    "refresh": "Refresh scales",
+    "refreshing": "Refreshing…",
+    "loading": "Loading scales…",
+    "empty": "No scales registered for this store yet."
+  },
+  "form": {
+    "fields": {
+      "deviceCode": "Scale code",
+      "name": "Name",
+      "model": "Model"
+    },
+    "placeholders": {
+      "name": "Checkout scales",
+      "model": "Optional model"
+    },
+    "submit": "Register scale",
+    "submitting": "Registering…",
+    "errors": {
+      "missingFields": "Enter the scale code and name."
+    }
+  },
+  "token": {
+    "heading_created": "API token for {{code}} created.",
+    "heading_regenerated": "API token for {{code}} regenerated.",
+    "warning": "Copy it now. The token is shown only once and is not stored in the interface.",
+    "hide": "Hide token"
+  },
+  "columns": {
+    "deviceCode": "Scale code",
+    "name": "Name",
+    "model": "Model",
+    "status": "Status",
+    "lastSeenAt": "Last contact",
+    "lastSyncAt": "Last sync",
+    "catalogVersion": "Catalog version",
+    "syncStatus": "Sync status",
+    "actions": "Actions"
+  },
+  "row": {
+    "outdatedNote": "Not updated to the current version",
+    "blocked": "Blocked",
+    "block": "Block",
+    "regenerateToken": "Regenerate token"
+  },
+  "syncError": {
+    "fallbackMessage": "Scale reported a sync error."
+  },
+  "errors": {
+    "csrf": "Could not prepare the secured form. Try again.",
+    "createFailed": "Could not register the scale.",
+    "blockFailed": "Could not block the scale.",
+    "regenerateFailed": "Could not regenerate the scale token."
+  }
+}
