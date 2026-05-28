@@ -2655,6 +2655,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
 
 
 function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('products');
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProductStatus | 'all'>('all');
@@ -2679,25 +2680,25 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
     <section className="panel" aria-labelledby="products-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Товары</p>
-          <h2 id="products-title">Каталог товаров</h2>
-          <p className="muted">Ищите и управляйте товарами с PLU для каталогов и цен.</p>
+          <p className="eyebrow">{t('list.eyebrow')}</p>
+          <h2 id="products-title">{t('list.title')}</h2>
+          <p className="muted">{t('list.description')}</p>
         </div>
         <div className="action-row">
           <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? 'Обновляем...' : 'Обновить'}
+            {isFetching ? t('list.refreshing') : t('list.refresh')}
           </button>
-          <button type="button" onClick={() => onNavigate({ name: 'product-create' })}>Создать товар</button>
+          <button type="button" onClick={() => onNavigate({ name: 'product-create' })}>{t('list.create')}</button>
         </div>
       </div>
 
       <form className="product-search" onSubmit={handleSearch}>
         <label>
-          Поиск
-          <input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="Название, короткое название, PLU, SKU или штрихкод" />
+          {t('list.search')}
+          <input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={t('list.searchPlaceholder')} />
         </label>
         <label>
-          Статус
+          {t('list.status')}
           <select
             value={status}
             onChange={(event) => {
@@ -2705,34 +2706,34 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
               setOffset(0);
             }}
           >
-            <option value="all">Все статусы</option>
-            <option value="active">Активен</option>
-            <option value="inactive">Неактивен</option>
-            <option value="archived">В архиве</option>
+            <option value="all">{t('list.allStatuses')}</option>
+            <option value="active">{t('statuses.active', { ns: 'common' })}</option>
+            <option value="inactive">{t('statuses.inactive', { ns: 'common' })}</option>
+            <option value="archived">{t('statuses.archived', { ns: 'common' })}</option>
           </select>
         </label>
-        <button type="submit">Найти</button>
+        <button type="submit">{t('list.find')}</button>
       </form>
 
-      {isLoading && <div className="status status-loading">Загружаем товары...</div>}
+      {isLoading && <div className="status status-loading">{t('list.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && products.length === 0 && <div className="empty-state">Товары не найдены.</div>}
+      {!isLoading && !errorMessage && products.length === 0 && <div className="empty-state">{t('list.empty')}</div>}
 
-      <Pagination meta={productsMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="товаров" />
+      <Pagination meta={productsMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label={t('list.paginationLabel')} />
 
       {products.length > 0 && (
         <div className="product-table-wrap">
           <table className="product-table">
             <thead>
               <tr>
-                <th>PLU</th>
-                <th>Название</th>
-                <th>Короткое название</th>
-                <th>SKU</th>
-                <th>Штрихкод</th>
-                <th>Ед.</th>
-                <th>Статус</th>
-                <th>Действия</th>
+                <th>{t('list.columns.plu')}</th>
+                <th>{t('list.columns.name')}</th>
+                <th>{t('list.columns.shortName')}</th>
+                <th>{t('list.columns.sku')}</th>
+                <th>{t('list.columns.barcode')}</th>
+                <th>{t('list.columns.unit')}</th>
+                <th>{t('list.columns.status')}</th>
+                <th>{t('list.columns.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2747,7 +2748,7 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
                   <td><span className={`badge badge-${product.status}`}>{formatStatusLabel(product.status)}</span></td>
                   <td>
                     <button className="secondary-button table-action" type="button" onClick={() => onNavigate({ name: 'product-edit', productId: product.id })}>
-                      Изменить
+                      {t('list.actions.edit')}
                     </button>
                   </td>
                 </tr>
@@ -2761,6 +2762,7 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
 }
 
 function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'edit'; product?: Product; onCancel: () => void; onSaved: (product: Product) => void }) {
+  const { t } = useTranslation('products');
   const [values, setValues] = useState<ProductFormValues>({
     defaultPluCode: product?.defaultPluCode ?? '',
     name: product?.name ?? '',
@@ -2801,18 +2803,18 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
 
     const filename = file.name.toLowerCase();
     if (filename.endsWith('.gif') || file.type === 'image/gif') {
-      setUploadError('GIF не поддерживается. Загрузите JPG, PNG или WebP.');
+      setUploadError(t('editor.upload.errors.gifNotSupported'));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Файл изображения слишком большой. Загрузите изображение до 2 МБ.');
+      setUploadError(t('editor.upload.errors.tooLarge'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setUploadError('Не удалось подготовить защищённую загрузку. Повторите попытку.');
+      setUploadError(t('editor.upload.errors.csrf'));
       return;
     }
 
@@ -2827,9 +2829,9 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
         imageUrl: response.fileAsset.publicUrl,
         imageFileAssetId: response.fileAsset.id,
       }));
-      setUploadNotice(`Файл ${response.fileAsset.originalFileName} загружен. Сохраните товар, чтобы закрепить URL изображения.`);
+      setUploadNotice(t('editor.upload.noticeSaved', { name: response.fileAsset.originalFileName }));
     } catch (error) {
-      setUploadError(errorMessageFromUnknown(error, 'Не удалось загрузить изображение.'));
+      setUploadError(errorMessageFromUnknown(error, t('editor.upload.errors.uploadFailed')));
     }
   }
 
@@ -2840,13 +2842,13 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
     setSavedProduct(null);
 
     if (!values.defaultPluCode.trim() || !values.name.trim() || !values.shortName.trim() || !values.unit || !values.status) {
-      setFormError('Укажите PLU, название, короткое название, единицу измерения и статус.');
+      setFormError(t('editor.errors.missingFields'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setFormError(t('editor.errors.csrf'));
       return;
     }
 
@@ -2880,65 +2882,65 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
         onSaved(response.product);
       }
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось сохранить товар.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('editor.errors.saveFailed');
       setFormError(message);
     }
   }
 
   return (
     <section className="panel" aria-labelledby="product-form-title">
-      <button className="link-button" type="button" onClick={onCancel}>← Назад к товарам</button>
-      <p className="eyebrow">{mode === 'create' ? 'Создание товара' : 'Редактирование товара'}</p>
-      <h2 id="product-form-title">{mode === 'create' ? 'Новый товар' : product?.name}</h2>
+      <button className="link-button" type="button" onClick={onCancel}>{t('editor.back')}</button>
+      <p className="eyebrow">{mode === 'create' ? t('editor.eyebrow.create') : t('editor.eyebrow.edit')}</p>
+      <h2 id="product-form-title">{mode === 'create' ? t('editor.titleCreate') : product?.name}</h2>
 
       {mode === 'edit' && existingPlacementCount > 0 && (
         <div className="status status-warning" role="status">
-          Товар используется в активных размещениях: {existingPlacementCount}. Изменение может повлиять на потребителей каталога.
+          {t('editor.placementWarning', { count: existingPlacementCount })}
         </div>
       )}
       {warning && (
         <div className="status status-warning" role="alert">
-          {warning.message} {warning.activePlacementCount ? `Активные размещения: ${warning.activePlacementCount}.` : ''}
-          <div className="action-row"><button type="button" onClick={() => savedProduct && onSaved(savedProduct)}>Назад к товарам</button></div>
+          {warning.message} {warning.activePlacementCount ? t('editor.activePlacementsSuffix', { count: warning.activePlacementCount }) : ''}
+          <div className="action-row"><button type="button" onClick={() => savedProduct && onSaved(savedProduct)}>{t('editor.backToProducts')}</button></div>
         </div>
       )}
 
       <form className="product-form" onSubmit={handleSubmit}>
         <div className="product-form-grid">
-          <label>PLU / defaultPluCode *<input value={values.defaultPluCode} onChange={(event) => updateValue('defaultPluCode', event.target.value)} placeholder="1001" /></label>
-          <label>Название *<input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder="Бананы" /></label>
-          <label>Короткое название *<input value={values.shortName} onChange={(event) => updateValue('shortName', event.target.value)} placeholder="Бананы" /></label>
-          <label>Ед. *<select value={values.unit} onChange={(event) => updateValue('unit', event.target.value as ProductUnit)}><option value="kg">кг</option><option value="g">г</option><option value="piece">шт.</option></select></label>
-          <label>Статус *<select value={values.status} onChange={(event) => updateValue('status', event.target.value as ProductStatus)}><option value="active">Активен</option><option value="inactive">Неактивен</option><option value="archived">В архиве</option></select></label>
-          <label>SKU<input value={values.sku ?? ''} onChange={(event) => updateValue('sku', event.target.value)} placeholder="Необязательный SKU" /></label>
-          <label>Штрихкод<input value={values.barcode ?? ''} onChange={(event) => updateValue('barcode', event.target.value)} placeholder="Необязательный штрихкод" /></label>
-          <label>URL изображения<input value={values.imageUrl ?? ''} onChange={(event) => updateValue('imageUrl', event.target.value)} placeholder="Необязательный URL изображения" /></label>
+          <label>{t('editor.fields.defaultPluCode')}<input value={values.defaultPluCode} onChange={(event) => updateValue('defaultPluCode', event.target.value)} placeholder={t('editor.placeholders.defaultPluCode')} /></label>
+          <label>{t('editor.fields.name')}<input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder={t('editor.placeholders.name')} /></label>
+          <label>{t('editor.fields.shortName')}<input value={values.shortName} onChange={(event) => updateValue('shortName', event.target.value)} placeholder={t('editor.placeholders.shortName')} /></label>
+          <label>{t('editor.fields.unit')}<select value={values.unit} onChange={(event) => updateValue('unit', event.target.value as ProductUnit)}><option value="kg">{t('unit.kg')}</option><option value="g">{t('unit.g')}</option><option value="piece">{t('unit.piece')}</option></select></label>
+          <label>{t('editor.fields.status')}<select value={values.status} onChange={(event) => updateValue('status', event.target.value as ProductStatus)}><option value="active">{t('statuses.active', { ns: 'common' })}</option><option value="inactive">{t('statuses.inactive', { ns: 'common' })}</option><option value="archived">{t('statuses.archived', { ns: 'common' })}</option></select></label>
+          <label>{t('editor.fields.sku')}<input value={values.sku ?? ''} onChange={(event) => updateValue('sku', event.target.value)} placeholder={t('editor.placeholders.sku')} /></label>
+          <label>{t('editor.fields.barcode')}<input value={values.barcode ?? ''} onChange={(event) => updateValue('barcode', event.target.value)} placeholder={t('editor.placeholders.barcode')} /></label>
+          <label>{t('editor.fields.imageUrl')}<input value={values.imageUrl ?? ''} onChange={(event) => updateValue('imageUrl', event.target.value)} placeholder={t('editor.placeholders.imageUrl')} /></label>
         </div>
-        <label>Описание<input value={values.description ?? ''} onChange={(event) => updateValue('description', event.target.value)} placeholder="Необязательное описание" /></label>
+        <label>{t('editor.fields.description')}<input value={values.description ?? ''} onChange={(event) => updateValue('description', event.target.value)} placeholder={t('editor.placeholders.description')} /></label>
         <div className="product-image-upload">
           <label>
-            Загрузка изображения товара
+            {t('editor.upload.label')}
             <input accept="image/png,image/jpeg,image/webp" disabled={uploadingImage || isSaving} onChange={handleImageUpload} type="file" />
           </label>
-          <p className="muted">Загрузите JPG, PNG или WebP до 2 МБ. Публичный URL сохранится в поле URL изображения после сохранения товара.</p>
+          <p className="muted">{t('editor.upload.hint')}</p>
           {values.imageUrl && (
             <div className="product-image-preview">
-              <img src={values.imageUrl} alt="Выбранный товар" />
+              <img src={values.imageUrl} alt={t('editor.preview.alt')} />
               <div>
-                <strong>Выбранное изображение</strong>
+                <strong>{t('editor.preview.label')}</strong>
                 <small>{values.imageUrl}</small>
               </div>
             </div>
           )}
-          {uploadingImage && <div className="status status-loading">Загружаем изображение...</div>}
+          {uploadingImage && <div className="status status-loading">{t('editor.upload.uploading')}</div>}
           {uploadNotice && <div className="status status-ok" role="status">{uploadNotice}</div>}
           {uploadError && <div className="form-error" role="alert">{uploadError}</div>}
         </div>
 
         {formError && <div className="form-error" role="alert">{formError}</div>}
         <div className="action-row">
-          <button type="submit" disabled={isSaving}>{isSaving ? 'Сохраняем...' : 'Сохранить товар'}</button>
-          <button className="secondary-button" type="button" onClick={onCancel}>Отмена</button>
+          <button type="submit" disabled={isSaving}>{isSaving ? t('editor.saving') : t('editor.submit')}</button>
+          <button className="secondary-button" type="button" onClick={onCancel}>{t('editor.cancel')}</button>
         </div>
       </form>
     </section>
@@ -2946,6 +2948,7 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
 }
 
 function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('products');
   const hasValidProductId = isValidRouteId(productId);
   const { currentData, error, isLoading } = useGetProductQuery(productId, {
     skip: !hasValidProductId,
@@ -2953,15 +2956,15 @@ function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavi
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (!hasValidProductId) {
-    return <RouteNotFoundPanel returnTo="products" message="Ссылка на редактирование товара пустая или некорректная. Откройте товар из списка." onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="products" message={t('routeNotFound.editInvalid')} onNavigate={onNavigate} />;
   }
 
   if (isLoading) {
-    return <section className="panel"><div className="status status-loading">Загружаем товар для редактирования...</div></section>;
+    return <section className="panel"><div className="status status-loading">{t('edit.loading')}</div></section>;
   }
 
   if (errorMessage || !currentData?.product) {
-    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? 'Товар не найден.'}</div></section>;
+    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? t('edit.notFound')}</div></section>;
   }
 
   return (
