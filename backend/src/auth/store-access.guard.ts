@@ -4,6 +4,7 @@ import { I18nService } from 'nestjs-i18n';
 import { AuthService } from './auth.service';
 import { STORE_ACCESS_METADATA, StoreAccessRequirement } from './store-access.decorator';
 import type { AuthenticatedRequest } from './auth.types';
+import { getRequestLocale } from '../i18n/coerce-locale';
 
 @Injectable()
 export class StoreAccessGuard implements CanActivate {
@@ -24,19 +25,20 @@ export class StoreAccessGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const lang = getRequestLocale(request.headers);
     const user = request.user;
     if (!user) {
-      throw new ForbiddenException(this.i18n.t('errors.auth.authRequired'));
+      throw new ForbiddenException(this.i18n.t('errors.auth.authRequired', { lang }));
     }
 
     const storeId = this.getStoreId(request, requirement);
     if (!storeId) {
-      throw new ForbiddenException(this.i18n.t('errors.auth.storeAccessDenied'));
+      throw new ForbiddenException(this.i18n.t('errors.auth.storeAccessDenied', { lang }));
     }
 
     const hasAccess = await this.authService.canAccessStore(user.id, user.role, storeId);
     if (!hasAccess) {
-      throw new ForbiddenException(this.i18n.t('errors.auth.storeAccessDenied'));
+      throw new ForbiddenException(this.i18n.t('errors.auth.storeAccessDenied', { lang }));
     }
 
     return true;

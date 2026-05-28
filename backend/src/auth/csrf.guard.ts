@@ -4,6 +4,7 @@ import { I18nService } from 'nestjs-i18n';
 import { getCookie, getHeader } from './cookie.util';
 import { CsrfService } from './csrf.service';
 import { SKIP_CSRF_METADATA } from './skip-csrf.decorator';
+import { getRequestLocale } from '../i18n/coerce-locale';
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -30,8 +31,9 @@ export class CsrfGuard implements CanActivate {
     const cookieToken = getCookie(request, this.csrfService.getCookieName());
     const headerToken = getHeader(request, this.csrfService.getHeaderName());
     if (!this.csrfService.tokensMatch(cookieToken, headerToken)) {
+      const lang = getRequestLocale(request.headers);
       throw new ForbiddenException({
-        message: this.i18n.t('errors.auth.csrfTokenInvalid'),
+        message: this.i18n.t('errors.auth.csrfTokenInvalid', { lang }),
         error: 'Forbidden',
         code: 'CSRF_TOKEN_INVALID',
         statusCode: 403,
