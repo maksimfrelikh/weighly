@@ -548,6 +548,7 @@ function PasswordResetRequestScreen({ onBackToLogin }: { onBackToLogin: () => vo
     try {
       await requestPasswordReset({
         email: trimmedEmail,
+        locale: normalizeLocale(i18n.resolvedLanguage ?? i18n.language),
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
