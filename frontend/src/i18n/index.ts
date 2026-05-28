@@ -7,19 +7,52 @@ import authRu from '../locales/ru/auth.json';
 import dashboardRu from '../locales/ru/dashboard.json';
 import navigationRu from '../locales/ru/navigation.json';
 import validationRu from '../locales/ru/validation.json';
+import storesRu from '../locales/ru/stores.json';
+import productsRu from '../locales/ru/products.json';
+import catalogRu from '../locales/ru/catalog.json';
+import pricesRu from '../locales/ru/prices.json';
+import advertisingRu from '../locales/ru/advertising.json';
+import publishingRu from '../locales/ru/publishing.json';
+import scalesRu from '../locales/ru/scales.json';
+import logsRu from '../locales/ru/logs.json';
+import usersRu from '../locales/ru/users.json';
 
 import commonEn from '../locales/en/common.json';
 import authEn from '../locales/en/auth.json';
 import dashboardEn from '../locales/en/dashboard.json';
 import navigationEn from '../locales/en/navigation.json';
 import validationEn from '../locales/en/validation.json';
+import storesEn from '../locales/en/stores.json';
+import productsEn from '../locales/en/products.json';
+import catalogEn from '../locales/en/catalog.json';
+import pricesEn from '../locales/en/prices.json';
+import advertisingEn from '../locales/en/advertising.json';
+import publishingEn from '../locales/en/publishing.json';
+import scalesEn from '../locales/en/scales.json';
+import logsEn from '../locales/en/logs.json';
+import usersEn from '../locales/en/users.json';
 
 export const SUPPORTED_LOCALES = ['ru', 'en'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const LOCALE_STORAGE_KEY = 'app.locale';
 export const DEFAULT_LOCALE: SupportedLocale = 'ru';
 
-export const I18N_NAMESPACES = ['common', 'auth', 'dashboard', 'navigation', 'validation'] as const;
+export const I18N_NAMESPACES = [
+  'common',
+  'auth',
+  'dashboard',
+  'navigation',
+  'validation',
+  'stores',
+  'products',
+  'catalog',
+  'prices',
+  'advertising',
+  'publishing',
+  'scales',
+  'logs',
+  'users',
+] as const;
 
 export const resources = {
   ru: {
@@ -28,6 +61,15 @@ export const resources = {
     dashboard: dashboardRu,
     navigation: navigationRu,
     validation: validationRu,
+    stores: storesRu,
+    products: productsRu,
+    catalog: catalogRu,
+    prices: pricesRu,
+    advertising: advertisingRu,
+    publishing: publishingRu,
+    scales: scalesRu,
+    logs: logsRu,
+    users: usersRu,
   },
   en: {
     common: commonEn,
@@ -35,6 +77,15 @@ export const resources = {
     dashboard: dashboardEn,
     navigation: navigationEn,
     validation: validationEn,
+    stores: storesEn,
+    products: productsEn,
+    catalog: catalogEn,
+    prices: pricesEn,
+    advertising: advertisingEn,
+    publishing: publishingEn,
+    scales: scalesEn,
+    logs: logsEn,
+    users: usersEn,
   },
 } as const;
 
