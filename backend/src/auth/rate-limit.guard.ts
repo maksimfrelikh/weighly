@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { I18nService } from 'nestjs-i18n';
 import { RATE_LIMIT_METADATA, RateLimitRequirement } from './rate-limit.decorator';
 import { RateLimitService } from './rate-limit.service';
 import { getHeader } from './cookie.util';
@@ -9,6 +10,7 @@ export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly rateLimitService: RateLimitService,
+    private readonly i18n: I18nService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -39,7 +41,7 @@ export class RateLimitGuard implements CanActivate {
     if (!result.allowed) {
       throw new HttpException(
         {
-          message: 'Слишком много запросов. Повторите попытку позже.',
+          message: this.i18n.t('errors.auth.rateLimitExceeded'),
           error: 'Too Many Requests',
           code: 'RATE_LIMIT_EXCEEDED',
           retryAfterSeconds: result.retryAfterSeconds,

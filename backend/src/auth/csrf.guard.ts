@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { I18nService } from 'nestjs-i18n';
 import { getCookie, getHeader } from './cookie.util';
 import { CsrfService } from './csrf.service';
 import { SKIP_CSRF_METADATA } from './skip-csrf.decorator';
@@ -11,6 +12,7 @@ export class CsrfGuard implements CanActivate {
   constructor(
     private readonly csrfService: CsrfService,
     private readonly reflector: Reflector,
+    private readonly i18n: I18nService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -29,7 +31,7 @@ export class CsrfGuard implements CanActivate {
     const headerToken = getHeader(request, this.csrfService.getHeaderName());
     if (!this.csrfService.tokensMatch(cookieToken, headerToken)) {
       throw new ForbiddenException({
-        message: 'Сессия формы истекла. Обновите страницу и повторите действие.',
+        message: this.i18n.t('errors.auth.csrfTokenInvalid'),
         error: 'Forbidden',
         code: 'CSRF_TOKEN_INVALID',
         statusCode: 403,
