@@ -37,5 +37,16 @@
     "userIdRequired": "ID пользователя обязателен",
     "userNotFound": "Пользователь не найден",
     "invalidRole": "Роль должна быть admin или operator"
+  },
+  "stores": {
+    "activeCatalogNotFound": "Активный каталог магазина не найден",
+    "storeCodeAlreadyExists": "Магазин с таким кодом уже существует",
+    "noFieldsToUpdate": "Укажите хотя бы одно поле магазина",
+    "storeIdRequired": "ID магазина обязателен",
+    "storeNotFound": "Магазин не найден",
+    "codeTooLongOrEmpty": "Код магазина обязателен и должен быть не длиннее 64 символов",
+    "nameTooLongOrEmpty": "Название магазина обязательно и должно быть не длиннее 255 символов",
+    "timezoneTooLong": "Часовой пояс магазина должен быть не длиннее 128 символов",
+    "invalidStatus": "Статус магазина должен быть active, inactive или archived"
   }
 }

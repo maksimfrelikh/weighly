@@ -37,5 +37,16 @@
     "userIdRequired": "User ID is required",
     "userNotFound": "User not found",
     "invalidRole": "Role must be admin or operator"
+  },
+  "stores": {
+    "activeCatalogNotFound": "Active store catalog not found",
+    "storeCodeAlreadyExists": "A store with this code already exists",
+    "noFieldsToUpdate": "Provide at least one store field to update",
+    "storeIdRequired": "Store ID is required",
+    "storeNotFound": "Store not found",
+    "codeTooLongOrEmpty": "Store code is required and must be no longer than 64 characters",
+    "nameTooLongOrEmpty": "Store name is required and must be no longer than 255 characters",
+    "timezoneTooLong": "Store timezone must be no longer than 128 characters",
+    "invalidStatus": "Store status must be active, inactive, or archived"
   }
 }
