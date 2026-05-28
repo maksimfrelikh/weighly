@@ -1,4 +1,5 @@
 import { type ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type PaginationMeta = {
   total: number;
@@ -23,8 +24,10 @@ export function Pagination({
   onOffsetChange,
   onLimitChange,
   pageSizeOptions = PAGE_SIZE_OPTIONS,
-  label = 'записей',
+  label,
 }: PaginationProps) {
+  const { t } = useTranslation('common');
+  const resolvedLabel = label ?? t('pagination.defaultLabel');
   const { total, limit, offset } = meta;
   const first = total === 0 ? 0 : offset + 1;
   const last = Math.min(offset + limit, total);
@@ -51,7 +54,9 @@ export function Pagination({
   return (
     <div className="pagination" data-testid="pagination">
       <span className="pagination__label muted" data-testid="pagination-label">
-        {total === 0 ? `0 ${label}` : `${first}–${last} из ${total} ${label}`}
+        {total === 0
+          ? t('pagination.totalEmpty', { label: resolvedLabel })
+          : t('pagination.range', { first, last, total, label: resolvedLabel })}
       </span>
       <div className="pagination__controls">
         <button
@@ -61,7 +66,7 @@ export function Pagination({
           onClick={handlePrev}
           disabled={atStart}
         >
-          Назад
+          {t('pagination.prev')}
         </button>
         <button
           type="button"
@@ -70,10 +75,10 @@ export function Pagination({
           onClick={handleNext}
           disabled={atEnd}
         >
-          Вперёд
+          {t('pagination.next')}
         </button>
         <label className="pagination__page-size">
-          <span className="muted">На странице</span>
+          <span className="muted">{t('pagination.pageSize')}</span>
           <select value={limit} onChange={handlePageSizeChange} data-testid="pagination-page-size">
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>

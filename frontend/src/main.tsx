@@ -1134,7 +1134,7 @@ function StoreDetails({ user, storeId, onNavigate }: { user: AuthUser; storeId: 
   const versionsErrorMessage = store && versionsError && 'message' in versionsError ? versionsError.message : null;
 
   if (!hasValidStoreId) {
-    return <RouteNotFoundPanel returnTo="stores" message={t('routeNotFound.detailsInvalid')} onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="stores" messageKey="detailsInvalid" onNavigate={onNavigate} />;
   }
 
   return (
@@ -2972,7 +2972,7 @@ function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavi
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (!hasValidProductId) {
-    return <RouteNotFoundPanel returnTo="products" message={t('routeNotFound.editInvalid')} onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="products" messageKey="editInvalid" onNavigate={onNavigate} />;
   }
 
   if (isLoading) {
@@ -3105,7 +3105,7 @@ function StoreEditRoute({ storeId, onNavigate }: { storeId: string; onNavigate: 
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (!hasValidStoreId) {
-    return <RouteNotFoundPanel returnTo="stores" message={t('routeNotFound.editInvalid')} onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="stores" messageKey="editInvalid" onNavigate={onNavigate} />;
   }
 
   if (isLoading) {
@@ -3126,14 +3126,23 @@ function StoreEditRoute({ storeId, onNavigate }: { storeId: string; onNavigate: 
   );
 }
 
-function RouteNotFoundPanel({ returnTo, message, onNavigate }: { returnTo: 'stores' | 'products'; message: string; onNavigate: (view: DashboardView) => void }) {
+function RouteNotFoundPanel({
+  returnTo,
+  messageKey,
+  onNavigate,
+}: {
+  returnTo: 'stores' | 'products';
+  messageKey: 'listInvalid' | 'detailsInvalid' | 'editInvalid';
+  onNavigate: (view: DashboardView) => void;
+}) {
+  const { t } = useTranslation(returnTo);
   return (
     <section className="panel" aria-labelledby="route-not-found-title">
-      <p className="eyebrow">Не найдено</p>
-      <h2 id="route-not-found-title">Раздел недоступен</h2>
-      <p className="muted">{message}</p>
+      <p className="eyebrow">{t('routeNotFound.eyebrow')}</p>
+      <h2 id="route-not-found-title">{t('routeNotFound.title')}</h2>
+      <p className="muted">{t(`routeNotFound.${messageKey}`)}</p>
       <button type="button" onClick={() => onNavigate({ name: returnTo })}>
-        Назад к {returnTo === 'stores' ? 'магазинам' : 'товарам'}
+        {t('routeNotFound.backToList')}
       </button>
     </section>
   );
@@ -3758,7 +3767,7 @@ function DashboardContent({ user, view, onNavigate }: { user: AuthUser; view: Da
   }
 
   if (view.name === 'route-not-found') {
-    return <RouteNotFoundPanel returnTo={view.returnTo} message={view.message} onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo={view.returnTo} messageKey={view.messageKey} onNavigate={onNavigate} />;
   }
 
   if (view.name === 'product-create') {

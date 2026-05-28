@@ -7,7 +7,7 @@ export type DashboardView =
   | { name: 'products' }
   | { name: 'product-create' }
   | { name: 'product-edit'; productId: string }
-  | { name: 'route-not-found'; returnTo: 'stores' | 'products'; message: string }
+  | { name: 'route-not-found'; returnTo: 'stores' | 'products'; messageKey: 'listInvalid' | 'detailsInvalid' | 'editInvalid' }
   | { name: 'users-access' }
   | { name: 'global-logs' };
 
@@ -26,8 +26,11 @@ export function readValidatedHashId(hash: string, prefix: string): string | null
   return isValidRouteId(rawId) ? rawId : null;
 }
 
-export function routeNotFoundView(returnTo: 'stores' | 'products', message: string): DashboardView {
-  return { name: 'route-not-found', returnTo, message };
+export function routeNotFoundView(
+  returnTo: 'stores' | 'products',
+  messageKey: 'listInvalid' | 'detailsInvalid' | 'editInvalid',
+): DashboardView {
+  return { name: 'route-not-found', returnTo, messageKey };
 }
 
 export function viewFromHash(hash: string): DashboardView {
@@ -36,30 +39,30 @@ export function viewFromHash(hash: string): DashboardView {
   if (hash === '#stores') return { name: 'stores' };
   if (hash === '#store-create') return { name: 'store-create' };
   if (hash === '#stores-not-found') {
-    return routeNotFoundView('stores', 'Ссылка на магазин недоступна. Откройте магазин из списка.');
+    return routeNotFoundView('stores', 'listInvalid');
   }
   if (hash.startsWith('#store:')) {
     const storeId = readValidatedHashId(hash, '#store:');
     return storeId
       ? { name: 'store-details', storeId }
-      : routeNotFoundView('stores', 'Ссылка на магазин пустая или некорректная. Откройте магазин из списка.');
+      : routeNotFoundView('stores', 'detailsInvalid');
   }
   if (hash.startsWith('#store-edit:')) {
     const storeId = readValidatedHashId(hash, '#store-edit:');
     return storeId
       ? { name: 'store-edit', storeId }
-      : routeNotFoundView('stores', 'Ссылка на редактирование магазина пустая или некорректная. Откройте магазин из списка.');
+      : routeNotFoundView('stores', 'editInvalid');
   }
   if (hash === '#products') return { name: 'products' };
   if (hash === '#product-create') return { name: 'product-create' };
   if (hash === '#products-not-found') {
-    return routeNotFoundView('products', 'Ссылка на товар недоступна. Откройте товар из списка.');
+    return routeNotFoundView('products', 'listInvalid');
   }
   if (hash.startsWith('#product-edit:')) {
     const productId = readValidatedHashId(hash, '#product-edit:');
     return productId
       ? { name: 'product-edit', productId }
-      : routeNotFoundView('products', 'Ссылка на редактирование товара пустая или некорректная. Откройте товар из списка.');
+      : routeNotFoundView('products', 'editInvalid');
   }
   return { name: 'overview' };
 }
