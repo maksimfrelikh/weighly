@@ -3111,29 +3111,15 @@ function RouteNotFoundPanel({
   );
 }
 
-const accessDeniedCopy = {
-  'global-logs': {
-    heading: 'Общие журналы доступны только администратору',
-    description: 'Операторы не могут открывать общий аудит и журналы синхронизации. Обратитесь к администратору, если нужен доступ.',
-  },
-  'users-access': {
-    heading: 'Пользователи и доступ доступны только администратору',
-    description: 'Операторы не могут управлять пользователями. Обратитесь к администратору, если нужен доступ к дополнительным магазинам.',
-  },
-  'store-management': {
-    heading: 'Управление магазинами доступно только администратору',
-    description: 'Операторы не могут создавать и редактировать магазины. Обратитесь к администратору, если магазин нужно изменить.',
-  },
-} as const;
+type AccessDeniedRoute = 'global-logs' | 'users-access' | 'store-management';
 
-function AccessDeniedPanel({ route }: { route: keyof typeof accessDeniedCopy }) {
-  const copy = accessDeniedCopy[route];
-
+function AccessDeniedPanel({ route }: { route: AccessDeniedRoute }) {
+  const { t } = useTranslation('dashboard');
   return (
     <section className="panel" aria-labelledby="access-denied-title">
-      <p className="eyebrow">Доступ запрещён</p>
-      <h2 id="access-denied-title">{copy.heading}</h2>
-      <p className="muted">{copy.description}</p>
+      <p className="eyebrow">{t('accessDenied.eyebrow')}</p>
+      <h2 id="access-denied-title">{t(`accessDenied.${route}.heading`)}</h2>
+      <p className="muted">{t(`accessDenied.${route}.description`)}</p>
     </section>
   );
 }
@@ -3596,9 +3582,9 @@ function ProblematicScaleCard({ device, onNavigate }: { device: AdminDashboardPr
         {device.reasons.map((reason) => <span className="badge badge-danger" key={reason}>{t(`admin.problemReasons.${reason}`, { defaultValue: reason.replace(/_/g, ' ') })}</span>)}
       </div>
       <dl className="compact-details">
-        <div><dt>Текущая версия</dt><dd>{device.currentCatalogVersionId ?? '—'}</dd></div>
-        <div><dt>Ожидаемая версия</dt><dd>{device.expectedCatalogVersionId ?? '—'}</dd></div>
-        <div><dt>Последняя синхронизация</dt><dd>{formatDateTime(device.lastSyncAt)}</dd></div>
+        <div><dt>{t('admin.problematicScale.currentVersion')}</dt><dd>{device.currentCatalogVersionId ?? '—'}</dd></div>
+        <div><dt>{t('admin.problematicScale.expectedVersion')}</dt><dd>{device.expectedCatalogVersionId ?? '—'}</dd></div>
+        <div><dt>{t('admin.problematicScale.lastSync')}</dt><dd>{formatDateTime(device.lastSyncAt)}</dd></div>
       </dl>
       {device.lastSyncError?.message && <div className="inline-error">{device.lastSyncError.message}</div>}
       <button className="secondary-button" type="button" onClick={() => onNavigate({ name: 'store-details', storeId: device.storeId })}>
