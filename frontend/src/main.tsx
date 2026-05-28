@@ -1415,6 +1415,7 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
 }
 
 function CatalogTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('catalog');
   const { data, error, isLoading, isFetching, refetch } = useListCatalogCategoriesQuery(storeId);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [createCategory, { isLoading: creating }] = useCreateCatalogCategoryMutation();
@@ -1462,7 +1463,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+      throw new Error(t('category.errors.csrf'));
     }
     return csrfData;
   }
@@ -1471,7 +1472,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
     const name = form.name.trim();
     const shortName = form.shortName.trim();
     if (!name) {
-      throw new Error('Укажите название категории.');
+      throw new Error(t('category.errors.nameRequired'));
     }
     return {
       name,
@@ -1494,9 +1495,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setRootForm(emptyCategoryForm());
-      setActionNotice('Корневая категория создана.');
+      setActionNotice(t('category.notices.rootCreated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось создать категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.createFailed')));
     }
   }
 
@@ -1515,9 +1516,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
       }).unwrap();
       setChildParentId(null);
       setChildForm(emptyCategoryForm());
-      setActionNotice('Дочерняя категория создана.');
+      setActionNotice(t('category.notices.childCreated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось создать дочернюю категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.createChildFailed')));
     }
   }
 
@@ -1539,7 +1540,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
     setActionError(null);
     setActionNotice(null);
     if (category.status !== 'archived' && editForm.status === 'archived') {
-      const confirmed = window.confirm('Архивация категории может повлиять на активные товары: архивные и неактивные категории не принимают активные размещения. Продолжить?');
+      const confirmed = window.confirm(t('category.archiveConfirm'));
       if (!confirmed) return;
     }
     try {
@@ -1552,9 +1553,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setEditingId(null);
-      setActionNotice('Категория обновлена.');
+      setActionNotice(t('category.notices.updated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.updateFailed')));
     }
   }
 
@@ -1575,9 +1576,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Порядок категорий обновлён.');
+      setActionNotice(t('category.notices.reordered'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить порядок категорий.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.reorderFailed')));
     }
   }
 
@@ -1597,11 +1598,11 @@ function CatalogTab({ storeId }: { storeId: string }) {
     setActionError(null);
     setActionNotice(null);
     if (!selectedCategory) {
-      setActionError('Выберите активную категорию, которая принимает размещения.');
+      setActionError(t('placement.errors.noCategory'));
       return;
     }
     if (!selectedProduct) {
-      setActionError('Выберите активный товар из общего каталога.');
+      setActionError(t('placement.errors.noProduct'));
       return;
     }
 
@@ -1617,15 +1618,18 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setSelectedProductId('');
-      setActionNotice(`${selectedProduct.name} добавлен в категорию «${selectedCategory.name}».`);
+      setActionNotice(t('placement.notices.added', { product: selectedProduct.name, category: selectedCategory.name }));
     } catch (error) {
       const existingPlacement = existingPlacementFromError(error);
       if (existingPlacement) {
         const confirmed = window.confirm(
-          `Этот товар уже активно размещён в категории «${existingPlacement.category?.name ?? 'другая категория'}». Переместить его в «${selectedCategory.name}»?`,
+          t('placement.moveConfirm', {
+            currentCategory: existingPlacement.category?.name ?? t('placement.fallbackCategoryName'),
+            targetCategory: selectedCategory.name,
+          }),
         );
         if (!confirmed) {
-          setActionError(errorMessageFromUnknown(error, 'У товара уже есть активное размещение в этом каталоге.'));
+          setActionError(errorMessageFromUnknown(error, t('placement.errors.duplicateActive')));
           return;
         }
         try {
@@ -1639,13 +1643,13 @@ function CatalogTab({ storeId }: { storeId: string }) {
             csrfHeaderName: csrfData.headerName,
           }).unwrap();
           setSelectedProductId('');
-          setActionNotice(`${selectedProduct.name} перемещён в категорию «${selectedCategory.name}».`);
+          setActionNotice(t('placement.notices.moved', { product: selectedProduct.name, category: selectedCategory.name }));
         } catch (moveError) {
-          setActionError(errorMessageFromUnknown(moveError, 'Не удалось переместить товар.'));
+          setActionError(errorMessageFromUnknown(moveError, t('placement.errors.moveFailed')));
         }
         return;
       }
-      setActionError(errorMessageFromUnknown(error, 'Не удалось добавить товар в категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('placement.errors.addFailed')));
     }
   }
 
@@ -1666,9 +1670,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Порядок товаров обновлён.');
+      setActionNotice(t('placement.notices.reordered'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить порядок товаров.'));
+      setActionError(errorMessageFromUnknown(error, t('placement.errors.reorderFailed')));
     }
   }
 
@@ -1676,12 +1680,12 @@ function CatalogTab({ storeId }: { storeId: string }) {
     <section className="catalog-tab" aria-labelledby="catalog-title">
       <div className="panel-heading catalog-heading">
         <div>
-          <p className="eyebrow">Каталог</p>
-          <h3 id="catalog-title">Категории активного каталога</h3>
-          <p className="muted">Управляйте деревом категорий для цен, размещения товаров и публикации.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="catalog-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить каталог'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
@@ -1689,69 +1693,69 @@ function CatalogTab({ storeId }: { storeId: string }) {
         <div className="catalog-summary">
           <strong>{data.catalog.name}</strong>
           <span className={`badge badge-${data.catalog.status}`}>{formatStatusLabel(data.catalog.status)}</span>
-          <small>ID каталога: <code>{data.catalog.id}</code></small>
+          <small>{t('tab.catalogId')} <code>{data.catalog.id}</code></small>
         </div>
       )}
 
       <form className="category-form category-root-form" onSubmit={handleCreateRoot}>
         <CategoryFields form={rootForm} onChange={setRootForm} />
-        <button type="submit" disabled={creating}>{creating ? 'Создаём...' : 'Создать корневую категорию'}</button>
+        <button type="submit" disabled={creating}>{creating ? t('category.creating') : t('category.createRoot')}</button>
       </form>
 
       <div className="status status-warning category-archive-warning">
-        Важно: архивные и неактивные категории не принимают активные размещения товаров. Если активные товары уже размещены здесь, валидация и публикация могут быть заблокированы до перемещения или отключения размещений.
+        {t('tab.archiveWarning')}
       </div>
 
       <section className="placement-panel" aria-labelledby="placements-title">
         <div className="panel-heading placement-heading">
           <div>
-            <p className="eyebrow">Размещение товаров</p>
-            <h4 id="placements-title">Товары в выбранной категории</h4>
-            <p className="muted">Ищите активные товары, добавляйте их в категории и меняйте порядок.</p>
+            <p className="eyebrow">{t('placement.eyebrow')}</p>
+            <h4 id="placements-title">{t('placement.title')}</h4>
+            <p className="muted">{t('placement.description')}</p>
           </div>
-          {placementsFetching && <span className="muted">Обновляем размещения…</span>}
+          {placementsFetching && <span className="muted">{t('placement.fetching')}</span>}
         </div>
 
         <form className="placement-form" onSubmit={handleAddPlacement}>
           <label>
-            Категория
+            {t('placement.fields.category')}
             <select value={selectedCategoryId} onChange={(event) => setSelectedCategoryId(event.target.value)} disabled={placementBusy || activeCategoryOptions.length === 0}>
-              {activeCategoryOptions.length === 0 && <option value="">Нет доступных активных категорий</option>}
+              {activeCategoryOptions.length === 0 && <option value="">{t('placement.categorySelect.noOptions')}</option>}
               {activeCategoryOptions.map((category) => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </select>
           </label>
           <label>
-            Найти товар
+            {t('placement.fields.searchProduct')}
             <input
               value={productSearch}
               onChange={(event) => {
                 setProductSearch(event.target.value);
                 setSelectedProductId('');
               }}
-              placeholder="Название, PLU, штрихкод или SKU"
+              placeholder={t('placement.placeholders.searchProduct')}
             />
           </label>
           <label>
-            Товар
+            {t('placement.fields.product')}
             <select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)} disabled={placementBusy || selectableProducts.length === 0}>
-              <option value="">{productsFetching ? 'Ищем…' : 'Выберите активный товар'}</option>
+              <option value="">{productsFetching ? t('placement.productSelect.searching') : t('placement.productSelect.placeholder')}</option>
               {selectableProducts.map((product) => (
                 <option key={product.id} value={product.id}>{product.defaultPluCode} · {product.name}</option>
               ))}
             </select>
           </label>
           <button type="submit" disabled={placementBusy || !selectedCategory || !selectedProduct}>
-            {creatingPlacement || movingPlacement ? 'Сохраняем…' : 'Добавить в категорию'}
+            {creatingPlacement || movingPlacement ? t('placement.saving') : t('placement.submit')}
           </button>
         </form>
-        <p className="muted">Архивные и неактивные товары и категории недоступны для активных размещений.</p>
+        <p className="muted">{t('placement.hint')}</p>
 
         {placementsErrorMessage && <div className="form-error" role="alert">{placementsErrorMessage}</div>}
-        {placementsLoading && <div className="status status-loading">Загружаем товары категории...</div>}
-        {!selectedCategoryId && <div className="empty-state">Создайте или активируйте категорию перед добавлением товаров.</div>}
-        {selectedCategoryId && !placementsLoading && placements.length === 0 && <div className="empty-state">В этой категории пока нет активных товаров.</div>}
+        {placementsLoading && <div className="status status-loading">{t('placement.loading')}</div>}
+        {!selectedCategoryId && <div className="empty-state">{t('placement.empty.noSelection')}</div>}
+        {selectedCategoryId && !placementsLoading && placements.length === 0 && <div className="empty-state">{t('placement.empty.noActiveProducts')}</div>}
         {placements.length > 0 && (
           <ul className="placement-list">
             {placements.map((placement, index) => (
@@ -1759,13 +1763,13 @@ function CatalogTab({ storeId }: { storeId: string }) {
                 <div>
                   <strong>{placement.product?.name ?? placement.productId}</strong>
                   <p className="muted">
-	                    PLU {placement.product?.defaultPluCode ?? '—'} · Порядок: {placement.sortOrder} · <span className={`badge badge-${placement.status}`}>{formatStatusLabel(placement.status)}</span>
+	                    {t('placement.details', { plu: placement.product?.defaultPluCode ?? '—', order: placement.sortOrder })} · <span className={`badge badge-${placement.status}`}>{formatStatusLabel(placement.status)}</span>
                   </p>
-	                  {placement.product?.status !== 'active' && <span className="price-warning">Товар больше не активен</span>}
+	                  {placement.product?.status !== 'active' && <span className="price-warning">{t('placement.productNoLongerActive')}</span>}
                 </div>
                 <div className="category-actions">
-                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, -1)} disabled={placementBusy || index === 0}>↑</button>
-                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, 1)} disabled={placementBusy || index === placements.length - 1}>↓</button>
+                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, -1)} disabled={placementBusy || index === 0}>{t('category.moveUp')}</button>
+                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, 1)} disabled={placementBusy || index === placements.length - 1}>{t('category.moveDown')}</button>
                 </div>
               </li>
             ))}
@@ -1775,11 +1779,11 @@ function CatalogTab({ storeId }: { storeId: string }) {
 
       {actionNotice && <div className="status status-ok" role="status">{actionNotice}</div>}
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
-      {isLoading && <div className="status status-loading">Загружаем категории активного каталога...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loadingCategories')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && categories.length === 0 && <div className="empty-state">Категорий пока нет. Создайте первую корневую категорию выше.</div>}
+      {!isLoading && !errorMessage && categories.length === 0 && <div className="empty-state">{t('tab.empty')}</div>}
       {categories.length > 0 && (
-        <div className="category-tree" role="tree" aria-label="Дерево категорий активного каталога">
+        <div className="category-tree" role="tree" aria-label={t('tab.treeAriaLabel')}>
           <CategoryTreeList
             categories={categories}
             allCategories={flatCategories}
@@ -1851,6 +1855,7 @@ function CategoryTreeList({
   selectedCategoryId: string;
   onSelectCategory: (category: CatalogCategory) => void;
 }) {
+  const { t } = useTranslation('catalog');
   return (
     <ul className="category-list">
       {categories.map((category, index) => (
@@ -1860,8 +1865,8 @@ function CategoryTreeList({
               <form className="category-edit-form" onSubmit={(event) => onUpdate(category, event)}>
                 <CategoryFields form={editForm} onChange={onEditFormChange} showParent allCategories={allCategories} currentCategory={category} />
                 <div className="category-actions">
-                  <button type="submit" disabled={busy}>{busy ? 'Сохраняем...' : 'Сохранить категорию'}</button>
-                  <button className="secondary-button" type="button" onClick={onCancelEdit}>Отмена</button>
+                  <button type="submit" disabled={busy}>{busy ? t('category.saving') : t('category.save')}</button>
+                  <button className="secondary-button" type="button" onClick={onCancelEdit}>{t('category.cancel')}</button>
                 </div>
               </form>
             ) : (
@@ -1871,25 +1876,25 @@ function CategoryTreeList({
                     <div className="category-title-row">
                       <strong>{category.name}</strong>
                       <span className={`badge badge-${category.status}`}>{formatStatusLabel(category.status)}</span>
-                      {!category.canAcceptActivePlacements && <span className="price-warning">Активные размещения недоступны</span>}
+                      {!category.canAcceptActivePlacements && <span className="price-warning">{t('category.noActivePlacements')}</span>}
                     </div>
-                    <p className="muted">Короткое название: {category.shortName} · Порядок: {category.sortOrder}</p>
+                    <p className="muted">{t('category.shortNameField', { value: category.shortName })} · {t('category.sortOrderField', { value: category.sortOrder })}</p>
                     <small><code>{category.id}</code></small>
                   </div>
                   <div className="category-actions">
-                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, -1)} disabled={busy || index === 0}>↑</button>
-                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, 1)} disabled={busy || index === categories.length - 1}>↓</button>
-                    <button className="secondary-button" type="button" onClick={() => onSelectCategory(category)} disabled={busy || !category.canAcceptActivePlacements || category.status !== 'active'}>{selectedCategoryId === category.id ? 'Выбрана' : 'Управлять товарами'}</button>
-                    <button className="secondary-button" type="button" onClick={() => onAddChild(category)} disabled={busy}>Добавить дочернюю</button>
-                    <button type="button" onClick={() => onEdit(category)} disabled={busy}>Изменить</button>
+                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, -1)} disabled={busy || index === 0}>{t('category.moveUp')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, 1)} disabled={busy || index === categories.length - 1}>{t('category.moveDown')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onSelectCategory(category)} disabled={busy || !category.canAcceptActivePlacements || category.status !== 'active'}>{selectedCategoryId === category.id ? t('category.selected') : t('category.manageProducts')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onAddChild(category)} disabled={busy}>{t('category.addChild')}</button>
+                    <button type="button" onClick={() => onEdit(category)} disabled={busy}>{t('category.edit')}</button>
                   </div>
                 </div>
                 {childParentId === category.id && (
                   <form className="category-form category-child-form" onSubmit={onCreateChild}>
                     <CategoryFields form={childForm} onChange={onChildFormChange} />
                     <div className="category-actions">
-                      <button type="submit" disabled={busy}>{busy ? 'Создаём...' : `Создать дочернюю для «${category.name}»`}</button>
-                      <button className="secondary-button" type="button" onClick={onCancelChild}>Отмена</button>
+                      <button type="submit" disabled={busy}>{busy ? t('category.creating') : t('category.createChild', { name: category.name })}</button>
+                      <button className="secondary-button" type="button" onClick={onCancelChild}>{t('category.cancel')}</button>
                     </div>
                   </form>
                 )}
@@ -1937,32 +1942,33 @@ function CategoryFields({
   allCategories?: CatalogCategory[];
   currentCategory?: CatalogCategory;
 }) {
+  const { t } = useTranslation('catalog');
   const descendantIds = useMemo(() => currentCategory ? collectDescendantIds(currentCategory) : new Set<string>(), [currentCategory]);
   const parentOptions = allCategories.filter((category) => category.id !== currentCategory?.id && !descendantIds.has(category.id));
 
   return (
     <div className="category-fields">
       <label>
-        Название
-        <input value={form.name} onChange={(event) => onChange({ ...form, name: event.target.value })} placeholder="Выпечка" />
+        {t('category.fields.name')}
+        <input value={form.name} onChange={(event) => onChange({ ...form, name: event.target.value })} placeholder={t('category.placeholders.name')} />
       </label>
       <label>
-        Короткое название
-        <input value={form.shortName} onChange={(event) => onChange({ ...form, shortName: event.target.value })} placeholder="Необязательное название" />
+        {t('category.fields.shortName')}
+        <input value={form.shortName} onChange={(event) => onChange({ ...form, shortName: event.target.value })} placeholder={t('category.placeholders.shortName')} />
       </label>
       <label>
-        Статус
+        {t('category.fields.status')}
         <select value={form.status} onChange={(event) => onChange({ ...form, status: event.target.value as CategoryStatus })}>
-          <option value="active">Активна</option>
-          <option value="inactive">Неактивна</option>
-          <option value="archived">В архиве</option>
+          <option value="active">{t('category.statusOptions.active')}</option>
+          <option value="inactive">{t('category.statusOptions.inactive')}</option>
+          <option value="archived">{t('category.statusOptions.archived')}</option>
         </select>
       </label>
       {showParent && (
         <label>
-          Родительская категория
+          {t('category.fields.parent')}
           <select value={form.parentId} onChange={(event) => onChange({ ...form, parentId: event.target.value })}>
-            <option value="">Корневой уровень</option>
+            <option value="">{t('category.parentOptions.root')}</option>
             {parentOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
