@@ -1,0 +1,110 @@
+{
+  "tab": {
+    "eyebrow": "Catalog",
+    "title": "Active catalog categories",
+    "description": "Manage the category tree for prices, product placement, and publishing.",
+    "refresh": "Refresh catalog",
+    "refreshing": "Refreshing…",
+    "catalogId": "Catalog ID:",
+    "treeAriaLabel": "Active catalog category tree",
+    "archiveWarning": "Note: archived and inactive categories cannot accept active product placements. If active products are already here, validation and publishing may be blocked until placements are moved or deactivated.",
+    "loadingCategories": "Loading active catalog categories…",
+    "empty": "No categories yet. Create the first root category above."
+  },
+  "category": {
+    "fields": {
+      "name": "Name",
+      "shortName": "Short name",
+      "status": "Status",
+      "parent": "Parent category"
+    },
+    "placeholders": {
+      "name": "Bakery",
+      "shortName": "Optional name"
+    },
+    "statusOptions": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "archived": "Archived"
+    },
+    "parentOptions": {
+      "root": "Root level"
+    },
+    "createRoot": "Create root category",
+    "creating": "Creating…",
+    "createChild": "Create child for “{{name}}”",
+    "save": "Save category",
+    "saving": "Saving…",
+    "addChild": "Add child",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "moveUp": "↑",
+    "moveDown": "↓",
+    "selected": "Selected",
+    "manageProducts": "Manage products",
+    "shortNameField": "Short name: {{value}}",
+    "sortOrderField": "Order: {{value}}",
+    "noActivePlacements": "No active placements available",
+    "archiveConfirm": "Archiving the category may affect active products: archived and inactive categories cannot accept active placements. Continue?",
+    "errors": {
+      "nameRequired": "Enter the category name.",
+      "csrf": "Could not prepare the secured form. Try again.",
+      "createFailed": "Could not create the category.",
+      "createChildFailed": "Could not create the child category.",
+      "updateFailed": "Could not update the category.",
+      "reorderFailed": "Could not update the category order."
+    },
+    "notices": {
+      "rootCreated": "Root category created.",
+      "childCreated": "Child category created.",
+      "updated": "Category updated.",
+      "reordered": "Category order updated."
+    }
+  },
+  "placement": {
+    "eyebrow": "Product placement",
+    "title": "Products in the selected category",
+    "description": "Search active products, add them to categories, and reorder them.",
+    "fetching": "Refreshing placements…",
+    "fields": {
+      "category": "Category",
+      "searchProduct": "Find a product",
+      "product": "Product"
+    },
+    "placeholders": {
+      "searchProduct": "Name, PLU, barcode, or SKU"
+    },
+    "categorySelect": {
+      "noOptions": "No active categories available"
+    },
+    "productSelect": {
+      "searching": "Searching…",
+      "placeholder": "Pick an active product"
+    },
+    "submit": "Add to category",
+    "saving": "Saving…",
+    "hint": "Archived and inactive products and categories cannot be used in active placements.",
+    "productNoLongerActive": "Product is no longer active",
+    "details": "PLU {{plu}} · Order: {{order}}",
+    "loading": "Loading category products…",
+    "empty": {
+      "noSelection": "Create or activate a category before adding products.",
+      "noActiveProducts": "This category has no active products yet."
+    },
+    "errors": {
+      "noCategory": "Pick an active category that accepts placements.",
+      "noProduct": "Pick an active product from the master catalog.",
+      "duplicateActive": "The product already has an active placement in this catalog.",
+      "addFailed": "Could not add the product to the category.",
+      "moveFailed": "Could not move the product.",
+      "reorderFailed": "Could not update the product order."
+    },
+    "notices": {
+      "added": "{{product}} added to category “{{category}}”.",
+      "moved": "{{product}} moved to category “{{category}}”.",
+      "reordered": "Product order updated."
+    },
+    "moveConfirm": "This product is already actively placed in category “{{currentCategory}}”. Move it to “{{targetCategory}}”?",
+    "fallbackCategoryName": "another category"
+  }
+}

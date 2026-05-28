@@ -37,7 +37,17 @@
     "inactive": "Inactive",
     "archived": "Archived",
     "blocked": "Blocked",
-    "invited": "Invited"
+    "invited": "Invited",
+    "deleted": "Deleted",
+    "published": "Published"
+  },
+  "pagination": {
+    "totalEmpty": "0 {{label}}",
+    "range": "{{first}}–{{last}} of {{total}} {{label}}",
+    "prev": "Prev",
+    "next": "Next",
+    "pageSize": "Per page",
+    "defaultLabel": "records"
   },
   "errors": {
     "pageNotFound": "Page not found",

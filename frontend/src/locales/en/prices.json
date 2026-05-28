@@ -1,0 +1,47 @@
+{
+  "tab": {
+    "eyebrow": "Prices",
+    "title": "Store product prices",
+    "description": "Products from this store's active catalog.",
+    "refresh": "Refresh prices",
+    "refreshing": "Refreshing…",
+    "loading": "Loading active catalog prices…",
+    "emptyFiltered": "No products match these filters.",
+    "paginationLabel": "products"
+  },
+  "filters": {
+    "search": "Search",
+    "searchPlaceholder": "Name, short name, PLU, SKU, or barcode",
+    "category": "Category",
+    "categoryAll": "All categories",
+    "priceStatus": "Price status",
+    "priceStatusAll": "All products",
+    "priceStatusMissing": "Without price only",
+    "priceStatusPriced": "With price only"
+  },
+  "columns": {
+    "product": "Product",
+    "shortName": "Short name",
+    "plu": "PLU",
+    "skuBarcode": "SKU/barcode",
+    "category": "Category",
+    "currentPrice": "Current price",
+    "unit": "Unit",
+    "status": "Status",
+    "updatedAt": "Updated"
+  },
+  "row": {
+    "noPrice": "No price",
+    "invalidPrice": "Invalid price",
+    "pricePlaceholder": "0.00",
+    "priceAriaLabel": "Price for {{name}}",
+    "currencyAriaLabel": "Currency for {{name}}",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "errors": {
+    "priceMustBePositive": "Enter a price greater than 0.",
+    "csrf": "Could not prepare the secured form. Try again.",
+    "saveFailed": "Could not save the price."
+  }
+}

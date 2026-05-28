@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, type ReactNode, StrictMode, Suspense, useEffect, useMemo, useState } from 'react';
 import { Provider } from 'react-redux';
 import { createRoot } from 'react-dom/client';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { store } from './app/store';
 import './i18n';
 import i18n, { normalizeLocale } from './i18n';
@@ -124,11 +124,6 @@ import {
 } from './routeState';
 import './styles.css';
 
-const ROLE_FALLBACK_LABELS: Record<string, string> = {
-  admin: 'Администратор',
-  operator: 'Оператор',
-};
-
 const STATUS_FALLBACK_LABELS: Record<string, string> = {
   active: 'Активен',
   inactive: 'Неактивен',
@@ -138,36 +133,6 @@ const STATUS_FALLBACK_LABELS: Record<string, string> = {
   deleted: 'Удалён',
   published: 'Опубликован',
 };
-
-const unitLabels: Record<string, string> = {
-  kg: 'кг',
-  g: 'г',
-  piece: 'шт.',
-};
-
-const syncStatusLabels: Record<string, string> = {
-  no_update: 'Обновлений нет',
-  update_available: 'Есть обновление',
-  package_delivered: 'Пакет доставлен',
-  ack_received: 'Подтверждено',
-  auth_failed: 'Ошибка авторизации',
-  error: 'Ошибка',
-  unknown: 'Нет данных',
-};
-
-const problemReasonLabels: Record<string, string> = {
-  latest_sync_error: 'ошибка синхронизации',
-  missing_sync: 'нет синхронизации',
-  outdated_catalog_version: 'устаревший каталог',
-};
-
-function labelFor(value: string | null | undefined, labels: Record<string, string>) {
-  if (!value) {
-    return '—';
-  }
-
-  return labels[value] ?? value;
-}
 
 function formatStatusLabel(status: string | null | undefined) {
   if (!status) {
@@ -181,20 +146,18 @@ function formatStatusLabel(status: string | null | undefined) {
   return STATUS_FALLBACK_LABELS[status] ?? status;
 }
 
-function formatRoleLabel(role: string | null | undefined) {
-  return ROLE_FALLBACK_LABELS[role ?? ''] ?? role ?? '—';
-}
-
 function formatUnitLabel(unit: string | null | undefined) {
-  return labelFor(unit, unitLabels);
+  if (!unit) {
+    return '—';
+  }
+  const t = i18n.getFixedT(null, 'products');
+  return (t as (k: string, opts: { defaultValue: string }) => string)(`unit.${unit}`, { defaultValue: unit });
 }
 
 function formatSyncStatusLabel(status: string | null | undefined) {
-  return labelFor(status ?? 'unknown', syncStatusLabels);
-}
-
-function formatProblemReason(reason: string) {
-  return problemReasonLabels[reason] ?? reason.replace(/_/g, ' ');
+  const key = status ?? 'unknown';
+  const t = i18n.getFixedT(null, 'scales');
+  return (t as (k: string, opts: { defaultValue: string }) => string)(`syncStatus.${key}`, { defaultValue: key });
 }
 
 function HealthStatus() {
@@ -818,6 +781,7 @@ function Navigation({ user, activeView, onNavigate }: { user: AuthUser; activeVi
 }
 
 function StoresList({ user, onNavigate }: { user: AuthUser; onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('stores');
   const { data, error, isLoading, isFetching, refetch } = useListStoresQuery(undefined, {
     refetchOnFocus: true,
     refetchOnReconnect: true,
@@ -830,29 +794,29 @@ function StoresList({ user, onNavigate }: { user: AuthUser; onNavigate: (view: D
     <section className="panel" aria-labelledby="stores-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">{user.role === 'admin' ? 'Администрирование магазинов' : 'Назначенные магазины'}</p>
-          <h2 id="stores-title">Магазины</h2>
+          <p className="eyebrow">{user.role === 'admin' ? t('list.eyebrow.admin') : t('list.eyebrow.operator')}</p>
+          <h2 id="stores-title">{t('list.title')}</h2>
           <p className="muted">
             {user.role === 'admin'
-              ? 'Администраторы видят все неархивные магазины и управляют их карточками.'
-              : 'Операторы видят только магазины, назначенные их учётной записи.'}
+              ? t('list.description.admin')
+              : t('list.description.operator')}
           </p>
         </div>
         <div className="action-row">
           <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? 'Обновляем...' : 'Обновить'}
+            {isFetching ? t('list.refreshing') : t('list.refresh')}
           </button>
           {user.role === 'admin' && (
             <button type="button" onClick={() => onNavigate({ name: 'store-create' })}>
-              Создать магазин
+              {t('list.create')}
             </button>
           )}
         </div>
       </div>
 
-      {isLoading && <div className="status status-loading">Загружаем магазины...</div>}
+      {isLoading && <div className="status status-loading">{t('list.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && stores.length === 0 && <div className="empty-state">Доступных магазинов нет.</div>}
+      {!isLoading && !errorMessage && stores.length === 0 && <div className="empty-state">{t('list.empty')}</div>}
 
       {stores.length > 0 && (
         <div className="store-list" data-testid="stores-list">
@@ -861,16 +825,16 @@ function StoresList({ user, onNavigate }: { user: AuthUser; onNavigate: (view: D
               <div>
                 <p className="store-code">{store.code}</p>
                 <h3>{store.name}</h3>
-                <p className="muted">{store.address || 'Адрес не указан'} · {store.timezone}</p>
+                <p className="muted">{store.address || t('list.addressMissing')} · {store.timezone}</p>
               </div>
               <div className="store-actions">
                 <span className={`badge badge-${store.status}`}>{formatStatusLabel(store.status)}</span>
                 <button className="secondary-button" type="button" onClick={() => onNavigate({ name: 'store-details', storeId: store.id })}>
-                  Детали
+                  {t('list.actions.details')}
                 </button>
                 {user.role === 'admin' && (
                   <button className="secondary-button" type="button" onClick={() => onNavigate({ name: 'store-edit', storeId: store.id })}>
-                    Изменить
+                    {t('list.actions.edit')}
                   </button>
                 )}
               </div>
@@ -895,45 +859,46 @@ function LogsFiltersForm({
   stores?: Store[];
   showStoreFilter?: boolean;
 }) {
+  const { t } = useTranslation('logs');
   function setFilter(key: keyof LogsFilters, value: string) {
     onChange({ ...filters, [key]: value || undefined });
   }
 
   return (
-    <div className="logs-filters" aria-label="Фильтры журналов">
+    <div className="logs-filters" aria-label={t('filters.ariaLabel')}>
       {showStoreFilter && (
         <label>
-          Магазин
+          {t('filters.store')}
           <select value={filters.storeId ?? ''} onChange={(event) => setFilter('storeId', event.target.value)}>
-            <option value="">Все магазины</option>
+            <option value="">{t('filters.storeAll')}</option>
             {(stores ?? []).map((store) => <option key={store.id} value={store.id}>{store.code} · {store.name}</option>)}
           </select>
         </label>
       )}
       <label>
-        Тип сущности
-        <input value={filters.entityType ?? ''} onChange={(event) => setFilter('entityType', event.target.value)} placeholder="товар, магазин, весы…" />
+        {t('filters.entityType')}
+        <input value={filters.entityType ?? ''} onChange={(event) => setFilter('entityType', event.target.value)} placeholder={t('filters.entityTypePlaceholder')} />
       </label>
       <label>
-        Действие / статус аудита
-        <input value={filters.action ?? ''} onChange={(event) => setFilter('action', event.target.value)} placeholder="создание, изменение, вход…" />
+        {t('filters.action')}
+        <input value={filters.action ?? ''} onChange={(event) => setFilter('action', event.target.value)} placeholder={t('filters.actionPlaceholder')} />
       </label>
       <label>
-        Статус синхронизации
+        {t('filters.syncStatus')}
         <select value={filters.status ?? ''} onChange={(event) => setFilter('status', event.target.value)}>
-          <option value="">Любой статус</option>
+          <option value="">{t('filters.statusAny')}</option>
           {scaleSyncStatuses.map((status) => <option key={status} value={status}>{formatSyncStatusLabel(status)}</option>)}
         </select>
       </label>
       <label>
-        Дата с
+        {t('filters.dateFrom')}
         <input type="date" value={filters.dateFrom ?? ''} onChange={(event) => setFilter('dateFrom', event.target.value)} />
       </label>
       <label>
-        Дата по
+        {t('filters.dateTo')}
         <input type="date" value={filters.dateTo ?? ''} onChange={(event) => setFilter('dateTo', event.target.value)} />
       </label>
-      <button className="secondary-button" type="button" onClick={() => onChange({})}>Сбросить фильтры</button>
+      <button className="secondary-button" type="button" onClick={() => onChange({})}>{t('filters.reset')}</button>
     </div>
   );
 }
@@ -949,30 +914,31 @@ function LogsTables({
   onOffsetChange: (offset: number) => void;
   onLimitChange: (limit: number) => void;
 }) {
+  const { t } = useTranslation('logs');
   const auditEntries = auditLogs.data;
   const syncEntries = scaleSyncLogs.data;
   return (
     <div className="logs-grid">
       <section className="logs-card" aria-labelledby="audit-logs-title">
-        <h4 id="audit-logs-title">Журнал аудита</h4>
+        <h4 id="audit-logs-title">{t('tables.audit.title')}</h4>
         <Pagination
           meta={auditLogs.meta}
           onOffsetChange={onOffsetChange}
           onLimitChange={onLimitChange}
-          label="записей"
+          label={t('tables.paginationLabel')}
         />
-        {auditEntries.length === 0 ? <div className="empty-state">По выбранным фильтрам записей аудита нет.</div> : (
+        {auditEntries.length === 0 ? <div className="empty-state">{t('tables.audit.empty')}</div> : (
           <div className="logs-table-wrap">
             <table className="logs-table">
               <thead>
-                <tr><th>Время</th><th>Магазин</th><th>Пользователь</th><th>Сущность</th><th>Действие</th></tr>
+                <tr><th>{t('tables.audit.columns.time')}</th><th>{t('tables.audit.columns.store')}</th><th>{t('tables.audit.columns.user')}</th><th>{t('tables.audit.columns.entity')}</th><th>{t('tables.audit.columns.action')}</th></tr>
               </thead>
               <tbody>
                 {auditEntries.map((log) => (
                   <tr key={log.id}>
                     <td>{formatDateTime(log.createdAt)}</td>
-                    <td>{log.store ? `${log.store.code} · ${log.store.name}` : 'Все магазины'}</td>
-                    <td>{log.actor ? (log.actor.fullName || log.actor.email) : 'Система'}</td>
+                    <td>{log.store ? `${log.store.code} · ${log.store.name}` : t('tables.audit.row.allStores')}</td>
+                    <td>{log.actor ? (log.actor.fullName || log.actor.email) : t('tables.audit.row.systemActor')}</td>
                     <td><strong>{log.entityType}</strong>{log.entityId ? <span className="muted block">{log.entityId}</span> : null}</td>
                     <td><span className="badge badge-neutral">{log.action}</span></td>
                   </tr>
@@ -984,29 +950,29 @@ function LogsTables({
       </section>
 
       <section className="logs-card" aria-labelledby="sync-logs-title">
-        <h4 id="sync-logs-title">Журнал синхронизации весов</h4>
+        <h4 id="sync-logs-title">{t('tables.sync.title')}</h4>
         <Pagination
           meta={scaleSyncLogs.meta}
           onOffsetChange={onOffsetChange}
           onLimitChange={onLimitChange}
-          label="записей"
+          label={t('tables.paginationLabel')}
         />
-        {syncEntries.length === 0 ? <div className="empty-state">По выбранным фильтрам записей синхронизации нет.</div> : (
+        {syncEntries.length === 0 ? <div className="empty-state">{t('tables.sync.empty')}</div> : (
           <div className="logs-table-wrap">
             <table className="logs-table">
               <thead>
-                <tr><th>Время</th><th>Магазин</th><th>Весы</th><th>Статус</th><th>Версии / ошибка</th></tr>
+                <tr><th>{t('tables.sync.columns.time')}</th><th>{t('tables.sync.columns.store')}</th><th>{t('tables.sync.columns.scale')}</th><th>{t('tables.sync.columns.status')}</th><th>{t('tables.sync.columns.versions')}</th></tr>
               </thead>
               <tbody>
                 {syncEntries.map((log) => (
                   <tr key={log.id}>
                     <td>{formatDateTime(log.createdAt)}</td>
                     <td>{log.store ? `${log.store.code} · ${log.store.name}` : '—'}</td>
-                    <td>{log.scaleDevice ? `${log.scaleDevice.deviceCode} · ${log.scaleDevice.name}` : 'Неизвестные весы'}</td>
+                    <td>{log.scaleDevice ? `${log.scaleDevice.deviceCode} · ${log.scaleDevice.name}` : t('tables.sync.row.unknownScale')}</td>
                     <td><span className={`badge ${log.status === 'error' || log.status === 'auth_failed' ? 'badge-danger' : 'badge-neutral'}`}>{formatSyncStatusLabel(log.status)}</span></td>
                     <td>
-                      <span className="muted block">запрошена: {log.requestedVersionId ?? '—'}</span>
-                      <span className="muted block">доставлена: {log.deliveredVersionId ?? '—'}</span>
+                      <span className="muted block">{t('tables.sync.row.requestedVersion', { id: log.requestedVersionId ?? '—' })}</span>
+                      <span className="muted block">{t('tables.sync.row.deliveredVersion', { id: log.deliveredVersionId ?? '—' })}</span>
                       {log.errorMessage && <span className="inline-error block">{log.errorMessage}</span>}
                     </td>
                   </tr>
@@ -1021,6 +987,7 @@ function LogsTables({
 }
 
 function GlobalLogsPage({ user }: { user: AuthUser }) {
+  const { t } = useTranslation('logs');
   const [filters, setFilters] = useState<LogsFilters>({});
   const [limit, setLimit] = useState<number>(50);
   const [offset, setOffset] = useState<number>(0);
@@ -1047,14 +1014,14 @@ function GlobalLogsPage({ user }: { user: AuthUser }) {
     <section className="panel" aria-labelledby="global-logs-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Только администратор</p>
-          <h2 id="global-logs-title">Общие журналы</h2>
-          <p className="muted">Журнал аудита и синхронизации весов доступен только для чтения. Чувствительные поля не показываются.</p>
+          <p className="eyebrow">{t('global.eyebrow')}</p>
+          <h2 id="global-logs-title">{t('global.title')}</h2>
+          <p className="muted">{t('global.description')}</p>
         </div>
-        <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Обновляем...' : 'Обновить журналы'}</button>
+        <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? t('global.refreshing') : t('global.refresh')}</button>
       </div>
       <LogsFiltersForm filters={filters} onChange={handleFiltersChange} stores={storesData?.stores ?? []} showStoreFilter />
-      {isLoading && <div className="status status-loading">Загружаем журналы...</div>}
+      {isLoading && <div className="status status-loading">{t('global.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
       {data && (
         <LogsTables
@@ -1069,6 +1036,7 @@ function GlobalLogsPage({ user }: { user: AuthUser }) {
 }
 
 function StoreLogsTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('logs');
   const [filters, setFilters] = useState<LogsFilters>({});
   const [limit, setLimit] = useState<number>(50);
   const [offset, setOffset] = useState<number>(0);
@@ -1090,14 +1058,14 @@ function StoreLogsTab({ storeId }: { storeId: string }) {
     <section className="logs-tab" aria-labelledby="store-logs-title">
       <div className="panel-heading logs-heading">
         <div>
-          <p className="eyebrow">Журналы магазина</p>
-          <h3 id="store-logs-title">Журналы</h3>
-          <p className="muted">Активность только по этому магазину. Операторы видят только назначенные им магазины.</p>
+          <p className="eyebrow">{t('storeTab.eyebrow')}</p>
+          <h3 id="store-logs-title">{t('storeTab.title')}</h3>
+          <p className="muted">{t('storeTab.description')}</p>
         </div>
-        <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Обновляем...' : 'Обновить журналы'}</button>
+        <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>{isFetching ? t('storeTab.refreshing') : t('storeTab.refresh')}</button>
       </div>
       <LogsFiltersForm filters={filters} onChange={handleFiltersChange} />
-      {isLoading && <div className="status status-loading">Загружаем журналы магазина...</div>}
+      {isLoading && <div className="status status-loading">{t('storeTab.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
       {data && (
         <LogsTables
@@ -1112,6 +1080,7 @@ function StoreLogsTab({ storeId }: { storeId: string }) {
 }
 
 function StoreDetails({ user, storeId, onNavigate }: { user: AuthUser; storeId: string; onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('stores');
   const hasValidStoreId = isValidRouteId(storeId);
   const { currentData, error, isLoading } = useGetStoreQuery(storeId, {
     skip: !hasValidStoreId,
@@ -1128,22 +1097,22 @@ function StoreDetails({ user, storeId, onNavigate }: { user: AuthUser; storeId: 
   const versionsErrorMessage = store && versionsError && 'message' in versionsError ? versionsError.message : null;
 
   if (!hasValidStoreId) {
-    return <RouteNotFoundPanel returnTo="stores" message="Ссылка на магазин пустая или некорректная. Откройте магазин из списка." onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="stores" messageKey="detailsInvalid" onNavigate={onNavigate} />;
   }
 
   return (
     <section className="panel store-details-panel" aria-labelledby="store-details-title">
       <button className="link-button" type="button" onClick={() => onNavigate({ name: 'stores' })}>
-        ← Назад к магазинам
+        {t('details.back')}
       </button>
-      {isLoading && <div className="status status-loading">Загружаем детали магазина...</div>}
+      {isLoading && <div className="status status-loading">{t('details.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
       {versionsErrorMessage && <div className="form-error" role="alert">{versionsErrorMessage}</div>}
       {store && (
         <>
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Детали магазина</p>
+              <p className="eyebrow">{t('details.eyebrow')}</p>
               <h2 id="store-details-title">{store.name}</h2>
               <p className="muted">{store.code}</p>
             </div>
@@ -1151,17 +1120,17 @@ function StoreDetails({ user, storeId, onNavigate }: { user: AuthUser; storeId: 
               <span className={`badge badge-${store.status}`}>{formatStatusLabel(store.status)}</span>
               {user.role === 'admin' && (
                 <button type="button" onClick={() => onNavigate({ name: 'store-edit', storeId: store.id })}>
-                  Изменить магазин
+                  {t('details.editStore')}
                 </button>
               )}
             </div>
           </div>
           <dl className="details-grid">
-            <div><dt>Адрес</dt><dd>{store.address || '—'}</dd></div>
-            <div><dt>Часовой пояс</dt><dd>{store.timezone}</dd></div>
-            <div><dt>Опубликованный каталог</dt><dd>{versionsLoading ? 'Загружаем…' : formatVersionLabel(currentVersion)}</dd></div>
-            <div><dt>Создан</dt><dd>{new Date(store.createdAt).toLocaleString('ru-RU')}</dd></div>
-            <div><dt>Обновлён</dt><dd>{new Date(store.updatedAt).toLocaleString('ru-RU')}</dd></div>
+            <div><dt>{t('details.fields.address')}</dt><dd>{store.address || '—'}</dd></div>
+            <div><dt>{t('details.fields.timezone')}</dt><dd>{store.timezone}</dd></div>
+            <div><dt>{t('details.fields.publishedCatalog')}</dt><dd>{versionsLoading ? t('details.versionLoading') : formatVersionLabel(currentVersion, t('details.fields.noPublishedVersion'))}</dd></div>
+            <div><dt>{t('details.fields.createdAt')}</dt><dd>{new Date(store.createdAt).toLocaleString('ru-RU')}</dd></div>
+            <div><dt>{t('details.fields.updatedAt')}</dt><dd>{new Date(store.updatedAt).toLocaleString('ru-RU')}</dd></div>
           </dl>
           <CatalogTab storeId={store.id} />
           <AdvertisingTab storeId={store.id} />
@@ -1196,6 +1165,7 @@ const supportedBannerExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
 const maxBannerImageBytes = 2 * 1024 * 1024;
 
 function AdvertisingTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('advertising');
   const [limit, setLimit] = useState<number>(50);
   const [offset, setOffset] = useState<number>(0);
   const handleLimitChange = (next: number) => {
@@ -1219,7 +1189,7 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённое действие. Повторите попытку.');
+      throw new Error(t('errors.csrf'));
     }
     return csrfData;
   }
@@ -1230,11 +1200,11 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
     const hasSupportedMimeType = file.type === '' || supportedBannerMimeTypes.has(file.type);
 
     if (!hasSupportedExtension || !hasSupportedMimeType) {
-      return 'Формат баннера не поддерживается. Загрузите JPG, PNG или WebP.';
+      return t('errors.unsupportedFormat');
     }
 
     if (file.size > maxBannerImageBytes) {
-      return 'Файл баннера слишком большой. Загрузите изображение до 2 МБ.';
+      return t('errors.fileTooLarge');
     }
 
     return null;
@@ -1272,9 +1242,9 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Баннер загружен и добавлен. Опубликуйте новую версию каталога, чтобы отправить изменение на весы.');
+      setActionNotice(t('notices.uploaded'));
     } catch (uploadError) {
-      setActionError(errorMessageFromUnknown(uploadError, 'Не удалось загрузить баннер.'));
+      setActionError(errorMessageFromUnknown(uploadError, t('errors.uploadFailed')));
     }
   }
 
@@ -1293,9 +1263,9 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Статус баннера изменён. Опубликуйте новую версию каталога, чтобы отправить изменение на весы.');
+      setActionNotice(t('notices.statusChanged'));
     } catch (statusError) {
-      setActionError(errorMessageFromUnknown(statusError, 'Не удалось изменить статус баннера.'));
+      setActionError(errorMessageFromUnknown(statusError, t('errors.statusFailed')));
     }
   }
 
@@ -1318,9 +1288,9 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Порядок баннеров изменён. Опубликуйте новую версию каталога, чтобы отправить изменение на весы.');
+      setActionNotice(t('notices.reordered'));
     } catch (reorderError) {
-      setActionError(errorMessageFromUnknown(reorderError, 'Не удалось изменить порядок баннеров.'));
+      setActionError(errorMessageFromUnknown(reorderError, t('errors.reorderFailed')));
     }
   }
 
@@ -1328,51 +1298,51 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
     <section className="advertising-tab" aria-labelledby="advertising-title">
       <div className="panel-heading advertising-heading">
         <div>
-          <p className="eyebrow">Реклама</p>
-          <h3 id="advertising-title">Рекламные баннеры</h3>
-          <p className="muted">Загружайте баннеры JPG, PNG или WebP размером до 2 МБ.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="advertising-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить баннеры'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
       <div className="status status-warning publication-required" role="note">
-        Загрузка баннеров, изменение статуса и порядка требуют новой публикации каталога перед отправкой на весы.
+        {t('tab.publicationRequiredNotice')}
       </div>
 
       {listError && <div className="form-error" role="alert">{listError}</div>}
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
       {actionNotice && <div className="status status-ok">{actionNotice}</div>}
-      {isLoading && <div className="status status-loading">Загружаем рекламные баннеры...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loading')}</div>}
 
       <div className="banner-upload-card">
         <label>
-          Статус нового баннера
+          {t('form.newStatus')}
           <select value={newStatus} onChange={(event) => setNewStatus(event.target.value as BannerStatus)} disabled={busy}>
             {bannerStatuses.map((status) => <option key={status} value={status}>{formatStatusLabel(status)}</option>)}
           </select>
         </label>
         <label>
-          Изображение баннера
+          {t('form.image')}
           <input accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={handleBannerUpload} type="file" />
         </label>
       </div>
 
-      {!isLoading && banners.length === 0 && <div className="empty-state">Рекламных баннеров пока нет.</div>}
+      {!isLoading && banners.length === 0 && <div className="empty-state">{t('tab.empty')}</div>}
 
-      <Pagination meta={bannersMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="баннеров" />
+      <Pagination meta={bannersMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label={t('tab.paginationLabel')} />
 
       {banners.length > 0 && (
         <div className="banner-table-wrap">
           <table className="banner-table">
             <thead>
               <tr>
-                <th>Превью</th>
-                <th>Статус</th>
-                <th>Порядок</th>
-                <th>Обновлён</th>
-                <th>Действия</th>
+                <th>{t('columns.preview')}</th>
+                <th>{t('columns.status')}</th>
+                <th>{t('columns.order')}</th>
+                <th>{t('columns.updatedAt')}</th>
+                <th>{t('columns.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1380,13 +1350,13 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
                 <tr key={banner.id}>
                   <td>
                     <div className="banner-preview">
-                      <img src={banner.imageUrl} alt="Превью рекламного баннера" />
+                      <img src={banner.imageUrl} alt={t('row.previewAlt')} />
                       <small>{banner.imageUrl}</small>
                     </div>
                   </td>
                   <td>
                     <select
-                      aria-label={`Статус баннера ${banner.id}`}
+                      aria-label={t('row.statusAriaLabel', { id: banner.id })}
                       value={banner.status}
                       onChange={(event) => handleStatusChange(banner, event.target.value as BannerStatus)}
                       disabled={busy}
@@ -1398,8 +1368,8 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
                   <td>{new Date(banner.updatedAt).toLocaleString()}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="secondary-button table-action" type="button" disabled={busy || index === 0} onClick={() => moveBanner(index, -1)}>Выше</button>
-                      <button className="secondary-button table-action" type="button" disabled={busy || index === banners.length - 1} onClick={() => moveBanner(index, 1)}>Ниже</button>
+                      <button className="secondary-button table-action" type="button" disabled={busy || index === 0} onClick={() => moveBanner(index, -1)}>{t('row.moveUp')}</button>
+                      <button className="secondary-button table-action" type="button" disabled={busy || index === banners.length - 1} onClick={() => moveBanner(index, 1)}>{t('row.moveDown')}</button>
                     </div>
                   </td>
                 </tr>
@@ -1413,6 +1383,7 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
 }
 
 function CatalogTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('catalog');
   const { data, error, isLoading, isFetching, refetch } = useListCatalogCategoriesQuery(storeId);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [createCategory, { isLoading: creating }] = useCreateCatalogCategoryMutation();
@@ -1460,7 +1431,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+      throw new Error(t('category.errors.csrf'));
     }
     return csrfData;
   }
@@ -1469,7 +1440,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
     const name = form.name.trim();
     const shortName = form.shortName.trim();
     if (!name) {
-      throw new Error('Укажите название категории.');
+      throw new Error(t('category.errors.nameRequired'));
     }
     return {
       name,
@@ -1492,9 +1463,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setRootForm(emptyCategoryForm());
-      setActionNotice('Корневая категория создана.');
+      setActionNotice(t('category.notices.rootCreated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось создать категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.createFailed')));
     }
   }
 
@@ -1513,9 +1484,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
       }).unwrap();
       setChildParentId(null);
       setChildForm(emptyCategoryForm());
-      setActionNotice('Дочерняя категория создана.');
+      setActionNotice(t('category.notices.childCreated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось создать дочернюю категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.createChildFailed')));
     }
   }
 
@@ -1537,7 +1508,7 @@ function CatalogTab({ storeId }: { storeId: string }) {
     setActionError(null);
     setActionNotice(null);
     if (category.status !== 'archived' && editForm.status === 'archived') {
-      const confirmed = window.confirm('Архивация категории может повлиять на активные товары: архивные и неактивные категории не принимают активные размещения. Продолжить?');
+      const confirmed = window.confirm(t('category.archiveConfirm'));
       if (!confirmed) return;
     }
     try {
@@ -1550,9 +1521,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setEditingId(null);
-      setActionNotice('Категория обновлена.');
+      setActionNotice(t('category.notices.updated'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.updateFailed')));
     }
   }
 
@@ -1573,9 +1544,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Порядок категорий обновлён.');
+      setActionNotice(t('category.notices.reordered'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить порядок категорий.'));
+      setActionError(errorMessageFromUnknown(error, t('category.errors.reorderFailed')));
     }
   }
 
@@ -1595,11 +1566,11 @@ function CatalogTab({ storeId }: { storeId: string }) {
     setActionError(null);
     setActionNotice(null);
     if (!selectedCategory) {
-      setActionError('Выберите активную категорию, которая принимает размещения.');
+      setActionError(t('placement.errors.noCategory'));
       return;
     }
     if (!selectedProduct) {
-      setActionError('Выберите активный товар из общего каталога.');
+      setActionError(t('placement.errors.noProduct'));
       return;
     }
 
@@ -1615,15 +1586,18 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
       setSelectedProductId('');
-      setActionNotice(`${selectedProduct.name} добавлен в категорию «${selectedCategory.name}».`);
+      setActionNotice(t('placement.notices.added', { product: selectedProduct.name, category: selectedCategory.name }));
     } catch (error) {
       const existingPlacement = existingPlacementFromError(error);
       if (existingPlacement) {
         const confirmed = window.confirm(
-          `Этот товар уже активно размещён в категории «${existingPlacement.category?.name ?? 'другая категория'}». Переместить его в «${selectedCategory.name}»?`,
+          t('placement.moveConfirm', {
+            currentCategory: existingPlacement.category?.name ?? t('placement.fallbackCategoryName'),
+            targetCategory: selectedCategory.name,
+          }),
         );
         if (!confirmed) {
-          setActionError(errorMessageFromUnknown(error, 'У товара уже есть активное размещение в этом каталоге.'));
+          setActionError(errorMessageFromUnknown(error, t('placement.errors.duplicateActive')));
           return;
         }
         try {
@@ -1637,13 +1611,13 @@ function CatalogTab({ storeId }: { storeId: string }) {
             csrfHeaderName: csrfData.headerName,
           }).unwrap();
           setSelectedProductId('');
-          setActionNotice(`${selectedProduct.name} перемещён в категорию «${selectedCategory.name}».`);
+          setActionNotice(t('placement.notices.moved', { product: selectedProduct.name, category: selectedCategory.name }));
         } catch (moveError) {
-          setActionError(errorMessageFromUnknown(moveError, 'Не удалось переместить товар.'));
+          setActionError(errorMessageFromUnknown(moveError, t('placement.errors.moveFailed')));
         }
         return;
       }
-      setActionError(errorMessageFromUnknown(error, 'Не удалось добавить товар в категорию.'));
+      setActionError(errorMessageFromUnknown(error, t('placement.errors.addFailed')));
     }
   }
 
@@ -1664,9 +1638,9 @@ function CatalogTab({ storeId }: { storeId: string }) {
         csrfToken: csrfData.csrfToken,
         csrfHeaderName: csrfData.headerName,
       }).unwrap();
-      setActionNotice('Порядок товаров обновлён.');
+      setActionNotice(t('placement.notices.reordered'));
     } catch (error) {
-      setActionError(errorMessageFromUnknown(error, 'Не удалось обновить порядок товаров.'));
+      setActionError(errorMessageFromUnknown(error, t('placement.errors.reorderFailed')));
     }
   }
 
@@ -1674,12 +1648,12 @@ function CatalogTab({ storeId }: { storeId: string }) {
     <section className="catalog-tab" aria-labelledby="catalog-title">
       <div className="panel-heading catalog-heading">
         <div>
-          <p className="eyebrow">Каталог</p>
-          <h3 id="catalog-title">Категории активного каталога</h3>
-          <p className="muted">Управляйте деревом категорий для цен, размещения товаров и публикации.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="catalog-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить каталог'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
@@ -1687,69 +1661,69 @@ function CatalogTab({ storeId }: { storeId: string }) {
         <div className="catalog-summary">
           <strong>{data.catalog.name}</strong>
           <span className={`badge badge-${data.catalog.status}`}>{formatStatusLabel(data.catalog.status)}</span>
-          <small>ID каталога: <code>{data.catalog.id}</code></small>
+          <small>{t('tab.catalogId')} <code>{data.catalog.id}</code></small>
         </div>
       )}
 
       <form className="category-form category-root-form" onSubmit={handleCreateRoot}>
         <CategoryFields form={rootForm} onChange={setRootForm} />
-        <button type="submit" disabled={creating}>{creating ? 'Создаём...' : 'Создать корневую категорию'}</button>
+        <button type="submit" disabled={creating}>{creating ? t('category.creating') : t('category.createRoot')}</button>
       </form>
 
       <div className="status status-warning category-archive-warning">
-        Важно: архивные и неактивные категории не принимают активные размещения товаров. Если активные товары уже размещены здесь, валидация и публикация могут быть заблокированы до перемещения или отключения размещений.
+        {t('tab.archiveWarning')}
       </div>
 
       <section className="placement-panel" aria-labelledby="placements-title">
         <div className="panel-heading placement-heading">
           <div>
-            <p className="eyebrow">Размещение товаров</p>
-            <h4 id="placements-title">Товары в выбранной категории</h4>
-            <p className="muted">Ищите активные товары, добавляйте их в категории и меняйте порядок.</p>
+            <p className="eyebrow">{t('placement.eyebrow')}</p>
+            <h4 id="placements-title">{t('placement.title')}</h4>
+            <p className="muted">{t('placement.description')}</p>
           </div>
-          {placementsFetching && <span className="muted">Обновляем размещения…</span>}
+          {placementsFetching && <span className="muted">{t('placement.fetching')}</span>}
         </div>
 
         <form className="placement-form" onSubmit={handleAddPlacement}>
           <label>
-            Категория
+            {t('placement.fields.category')}
             <select value={selectedCategoryId} onChange={(event) => setSelectedCategoryId(event.target.value)} disabled={placementBusy || activeCategoryOptions.length === 0}>
-              {activeCategoryOptions.length === 0 && <option value="">Нет доступных активных категорий</option>}
+              {activeCategoryOptions.length === 0 && <option value="">{t('placement.categorySelect.noOptions')}</option>}
               {activeCategoryOptions.map((category) => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </select>
           </label>
           <label>
-            Найти товар
+            {t('placement.fields.searchProduct')}
             <input
               value={productSearch}
               onChange={(event) => {
                 setProductSearch(event.target.value);
                 setSelectedProductId('');
               }}
-              placeholder="Название, PLU, штрихкод или SKU"
+              placeholder={t('placement.placeholders.searchProduct')}
             />
           </label>
           <label>
-            Товар
+            {t('placement.fields.product')}
             <select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)} disabled={placementBusy || selectableProducts.length === 0}>
-              <option value="">{productsFetching ? 'Ищем…' : 'Выберите активный товар'}</option>
+              <option value="">{productsFetching ? t('placement.productSelect.searching') : t('placement.productSelect.placeholder')}</option>
               {selectableProducts.map((product) => (
                 <option key={product.id} value={product.id}>{product.defaultPluCode} · {product.name}</option>
               ))}
             </select>
           </label>
           <button type="submit" disabled={placementBusy || !selectedCategory || !selectedProduct}>
-            {creatingPlacement || movingPlacement ? 'Сохраняем…' : 'Добавить в категорию'}
+            {creatingPlacement || movingPlacement ? t('placement.saving') : t('placement.submit')}
           </button>
         </form>
-        <p className="muted">Архивные и неактивные товары и категории недоступны для активных размещений.</p>
+        <p className="muted">{t('placement.hint')}</p>
 
         {placementsErrorMessage && <div className="form-error" role="alert">{placementsErrorMessage}</div>}
-        {placementsLoading && <div className="status status-loading">Загружаем товары категории...</div>}
-        {!selectedCategoryId && <div className="empty-state">Создайте или активируйте категорию перед добавлением товаров.</div>}
-        {selectedCategoryId && !placementsLoading && placements.length === 0 && <div className="empty-state">В этой категории пока нет активных товаров.</div>}
+        {placementsLoading && <div className="status status-loading">{t('placement.loading')}</div>}
+        {!selectedCategoryId && <div className="empty-state">{t('placement.empty.noSelection')}</div>}
+        {selectedCategoryId && !placementsLoading && placements.length === 0 && <div className="empty-state">{t('placement.empty.noActiveProducts')}</div>}
         {placements.length > 0 && (
           <ul className="placement-list">
             {placements.map((placement, index) => (
@@ -1757,13 +1731,13 @@ function CatalogTab({ storeId }: { storeId: string }) {
                 <div>
                   <strong>{placement.product?.name ?? placement.productId}</strong>
                   <p className="muted">
-	                    PLU {placement.product?.defaultPluCode ?? '—'} · Порядок: {placement.sortOrder} · <span className={`badge badge-${placement.status}`}>{formatStatusLabel(placement.status)}</span>
+	                    {t('placement.details', { plu: placement.product?.defaultPluCode ?? '—', order: placement.sortOrder })} · <span className={`badge badge-${placement.status}`}>{formatStatusLabel(placement.status)}</span>
                   </p>
-	                  {placement.product?.status !== 'active' && <span className="price-warning">Товар больше не активен</span>}
+	                  {placement.product?.status !== 'active' && <span className="price-warning">{t('placement.productNoLongerActive')}</span>}
                 </div>
                 <div className="category-actions">
-                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, -1)} disabled={placementBusy || index === 0}>↑</button>
-                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, 1)} disabled={placementBusy || index === placements.length - 1}>↓</button>
+                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, -1)} disabled={placementBusy || index === 0}>{t('category.moveUp')}</button>
+                  <button className="secondary-button" type="button" onClick={() => moveProductPlacement(placement, 1)} disabled={placementBusy || index === placements.length - 1}>{t('category.moveDown')}</button>
                 </div>
               </li>
             ))}
@@ -1773,11 +1747,11 @@ function CatalogTab({ storeId }: { storeId: string }) {
 
       {actionNotice && <div className="status status-ok" role="status">{actionNotice}</div>}
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
-      {isLoading && <div className="status status-loading">Загружаем категории активного каталога...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loadingCategories')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && categories.length === 0 && <div className="empty-state">Категорий пока нет. Создайте первую корневую категорию выше.</div>}
+      {!isLoading && !errorMessage && categories.length === 0 && <div className="empty-state">{t('tab.empty')}</div>}
       {categories.length > 0 && (
-        <div className="category-tree" role="tree" aria-label="Дерево категорий активного каталога">
+        <div className="category-tree" role="tree" aria-label={t('tab.treeAriaLabel')}>
           <CategoryTreeList
             categories={categories}
             allCategories={flatCategories}
@@ -1849,6 +1823,7 @@ function CategoryTreeList({
   selectedCategoryId: string;
   onSelectCategory: (category: CatalogCategory) => void;
 }) {
+  const { t } = useTranslation('catalog');
   return (
     <ul className="category-list">
       {categories.map((category, index) => (
@@ -1858,8 +1833,8 @@ function CategoryTreeList({
               <form className="category-edit-form" onSubmit={(event) => onUpdate(category, event)}>
                 <CategoryFields form={editForm} onChange={onEditFormChange} showParent allCategories={allCategories} currentCategory={category} />
                 <div className="category-actions">
-                  <button type="submit" disabled={busy}>{busy ? 'Сохраняем...' : 'Сохранить категорию'}</button>
-                  <button className="secondary-button" type="button" onClick={onCancelEdit}>Отмена</button>
+                  <button type="submit" disabled={busy}>{busy ? t('category.saving') : t('category.save')}</button>
+                  <button className="secondary-button" type="button" onClick={onCancelEdit}>{t('category.cancel')}</button>
                 </div>
               </form>
             ) : (
@@ -1869,25 +1844,25 @@ function CategoryTreeList({
                     <div className="category-title-row">
                       <strong>{category.name}</strong>
                       <span className={`badge badge-${category.status}`}>{formatStatusLabel(category.status)}</span>
-                      {!category.canAcceptActivePlacements && <span className="price-warning">Активные размещения недоступны</span>}
+                      {!category.canAcceptActivePlacements && <span className="price-warning">{t('category.noActivePlacements')}</span>}
                     </div>
-                    <p className="muted">Короткое название: {category.shortName} · Порядок: {category.sortOrder}</p>
+                    <p className="muted">{t('category.shortNameField', { value: category.shortName })} · {t('category.sortOrderField', { value: category.sortOrder })}</p>
                     <small><code>{category.id}</code></small>
                   </div>
                   <div className="category-actions">
-                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, -1)} disabled={busy || index === 0}>↑</button>
-                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, 1)} disabled={busy || index === categories.length - 1}>↓</button>
-                    <button className="secondary-button" type="button" onClick={() => onSelectCategory(category)} disabled={busy || !category.canAcceptActivePlacements || category.status !== 'active'}>{selectedCategoryId === category.id ? 'Выбрана' : 'Управлять товарами'}</button>
-                    <button className="secondary-button" type="button" onClick={() => onAddChild(category)} disabled={busy}>Добавить дочернюю</button>
-                    <button type="button" onClick={() => onEdit(category)} disabled={busy}>Изменить</button>
+                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, -1)} disabled={busy || index === 0}>{t('category.moveUp')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onMove(category, categories, 1)} disabled={busy || index === categories.length - 1}>{t('category.moveDown')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onSelectCategory(category)} disabled={busy || !category.canAcceptActivePlacements || category.status !== 'active'}>{selectedCategoryId === category.id ? t('category.selected') : t('category.manageProducts')}</button>
+                    <button className="secondary-button" type="button" onClick={() => onAddChild(category)} disabled={busy}>{t('category.addChild')}</button>
+                    <button type="button" onClick={() => onEdit(category)} disabled={busy}>{t('category.edit')}</button>
                   </div>
                 </div>
                 {childParentId === category.id && (
                   <form className="category-form category-child-form" onSubmit={onCreateChild}>
                     <CategoryFields form={childForm} onChange={onChildFormChange} />
                     <div className="category-actions">
-                      <button type="submit" disabled={busy}>{busy ? 'Создаём...' : `Создать дочернюю для «${category.name}»`}</button>
-                      <button className="secondary-button" type="button" onClick={onCancelChild}>Отмена</button>
+                      <button type="submit" disabled={busy}>{busy ? t('category.creating') : t('category.createChild', { name: category.name })}</button>
+                      <button className="secondary-button" type="button" onClick={onCancelChild}>{t('category.cancel')}</button>
                     </div>
                   </form>
                 )}
@@ -1935,32 +1910,33 @@ function CategoryFields({
   allCategories?: CatalogCategory[];
   currentCategory?: CatalogCategory;
 }) {
+  const { t } = useTranslation('catalog');
   const descendantIds = useMemo(() => currentCategory ? collectDescendantIds(currentCategory) : new Set<string>(), [currentCategory]);
   const parentOptions = allCategories.filter((category) => category.id !== currentCategory?.id && !descendantIds.has(category.id));
 
   return (
     <div className="category-fields">
       <label>
-        Название
-        <input value={form.name} onChange={(event) => onChange({ ...form, name: event.target.value })} placeholder="Выпечка" />
+        {t('category.fields.name')}
+        <input value={form.name} onChange={(event) => onChange({ ...form, name: event.target.value })} placeholder={t('category.placeholders.name')} />
       </label>
       <label>
-        Короткое название
-        <input value={form.shortName} onChange={(event) => onChange({ ...form, shortName: event.target.value })} placeholder="Необязательное название" />
+        {t('category.fields.shortName')}
+        <input value={form.shortName} onChange={(event) => onChange({ ...form, shortName: event.target.value })} placeholder={t('category.placeholders.shortName')} />
       </label>
       <label>
-        Статус
+        {t('category.fields.status')}
         <select value={form.status} onChange={(event) => onChange({ ...form, status: event.target.value as CategoryStatus })}>
-          <option value="active">Активна</option>
-          <option value="inactive">Неактивна</option>
-          <option value="archived">В архиве</option>
+          <option value="active">{t('category.statusOptions.active')}</option>
+          <option value="inactive">{t('category.statusOptions.inactive')}</option>
+          <option value="archived">{t('category.statusOptions.archived')}</option>
         </select>
       </label>
       {showParent && (
         <label>
-          Родительская категория
+          {t('category.fields.parent')}
           <select value={form.parentId} onChange={(event) => onChange({ ...form, parentId: event.target.value })}>
-            <option value="">Корневой уровень</option>
+            <option value="">{t('category.parentOptions.root')}</option>
             {parentOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
@@ -2006,6 +1982,7 @@ function existingPlacementFromError(error: unknown): CatalogProductPlacement | n
 }
 
 function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: string; userRole: AuthUser['role']; currentVersionId: string | null }) {
+  const { t } = useTranslation('scales');
   const isAdmin = userRole === 'admin';
   const { data, error, isLoading, isFetching, refetch } = useListScaleDevicesQuery(storeId);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
@@ -2024,7 +2001,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+      throw new Error(t('errors.csrf'));
     }
     return csrfData;
   }
@@ -2039,7 +2016,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     const trimmedName = name.trim();
     const trimmedModel = model.trim();
     if (!trimmedCode || !trimmedName) {
-      setFormError('Укажите код и название весов.');
+      setFormError(t('form.errors.missingFields'));
       return;
     }
 
@@ -2066,7 +2043,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось зарегистрировать весы.';
+        : t('errors.createFailed');
       setFormError(message);
     }
   }
@@ -2086,7 +2063,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось заблокировать весы.';
+        : t('errors.blockFailed');
       setActionError(message);
     }
   }
@@ -2111,7 +2088,7 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось перевыпустить токен весов.';
+        : t('errors.regenerateFailed');
       setActionError(message);
     }
   }
@@ -2120,30 +2097,30 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
     <section className="scale-devices-tab" aria-labelledby="scale-devices-title">
       <div className="panel-heading scale-devices-heading">
         <div>
-          <p className="eyebrow">Весы</p>
-          <h3 id="scale-devices-title">Весы магазина</h3>
-          <p className="muted">{isAdmin ? 'Регистрируйте устройства, блокируйте доступ и перевыпускайте API-токены.' : 'Статус публикации и синхронизации для этого магазина.'}</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="scale-devices-title">{t('tab.title')}</h3>
+          <p className="muted">{isAdmin ? t('tab.description.admin') : t('tab.description.operator')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить весы'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
       {isAdmin && (
         <form className="scale-device-form" onSubmit={handleCreate}>
           <label>
-            Код весов
+            {t('form.fields.deviceCode')}
             <input value={deviceCode} onChange={(event) => setDeviceCode(event.target.value)} placeholder="SCALE-001" />
           </label>
           <label>
-            Название
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Весы у кассы" />
+            {t('form.fields.name')}
+            <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t('form.placeholders.name')} />
           </label>
           <label>
-            Модель
-            <input value={model} onChange={(event) => setModel(event.target.value)} placeholder="Необязательная модель" />
+            {t('form.fields.model')}
+            <input value={model} onChange={(event) => setModel(event.target.value)} placeholder={t('form.placeholders.model')} />
           </label>
-          <button type="submit" disabled={creating}>{creating ? 'Регистрируем...' : 'Зарегистрировать весы'}</button>
+          <button type="submit" disabled={creating}>{creating ? t('form.submitting') : t('form.submit')}</button>
         </form>
       )}
 
@@ -2151,30 +2128,30 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
       {issuedToken && (
         <div className="token-notice" role="status">
-          <strong>API-токен для {issuedToken.deviceCode} {issuedToken.action === 'created' ? 'создан' : 'перевыпущен'}.</strong>
-          <span>Скопируйте его сейчас. Токен показывается только один раз и не хранится в интерфейсе.</span>
+          <strong>{t('token.heading', { code: issuedToken.deviceCode, context: issuedToken.action })}</strong>
+          <span>{t('token.warning')}</span>
           <code>{issuedToken.apiToken}</code>
-          <button className="secondary-button" type="button" onClick={() => setIssuedToken(null)}>Скрыть токен</button>
+          <button className="secondary-button" type="button" onClick={() => setIssuedToken(null)}>{t('token.hide')}</button>
         </div>
       )}
 
-      {isLoading && <div className="status status-loading">Загружаем весы...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && devices.length === 0 && <div className="empty-state">Для этого магазина весы ещё не зарегистрированы.</div>}
+      {!isLoading && !errorMessage && devices.length === 0 && <div className="empty-state">{t('tab.empty')}</div>}
       {devices.length > 0 && (
         <div className="scale-device-table-wrap">
           <table className="scale-device-table">
             <thead>
               <tr>
-                <th>Код весов</th>
-                {isAdmin && <th>Название</th>}
-                {isAdmin && <th>Модель</th>}
-                <th>Статус</th>
-                <th>Последний контакт</th>
-                <th>Последняя синхронизация</th>
-                <th>Версия каталога</th>
-                <th>Статус синхронизации</th>
-                {isAdmin && <th>Действия</th>}
+                <th>{t('columns.deviceCode')}</th>
+                {isAdmin && <th>{t('columns.name')}</th>}
+                {isAdmin && <th>{t('columns.model')}</th>}
+                <th>{t('columns.status')}</th>
+                <th>{t('columns.lastSeenAt')}</th>
+                <th>{t('columns.lastSyncAt')}</th>
+                <th>{t('columns.catalogVersion')}</th>
+                <th>{t('columns.syncStatus')}</th>
+                {isAdmin && <th>{t('columns.actions')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -2191,17 +2168,17 @@ function ScaleDevicesTab({ storeId, userRole, currentVersionId }: { storeId: str
                     <td>{formatDateTime(device.lastSyncAt)}</td>
                     <td>
                       <code>{device.currentCatalogVersionId ?? '—'}</code>
-                      {isOutdated && <span className="sync-note">Не обновлены до текущей версии</span>}
+                      {isOutdated && <span className="sync-note">{t('row.outdatedNote')}</span>}
                     </td>
                     <td><ScaleSyncStatusCell device={device} /></td>
                     {isAdmin && (
                       <td>
                         <div className="table-actions">
                           <button className="secondary-button" type="button" onClick={() => handleBlock(device)} disabled={updatingStatus || device.status === 'blocked'}>
-                            {device.status === 'blocked' ? 'Заблокированы' : 'Заблокировать'}
+                            {device.status === 'blocked' ? t('row.blocked') : t('row.block')}
                           </button>
                           <button className="secondary-button" type="button" onClick={() => handleRegenerate(device)} disabled={regenerating}>
-                            Перевыпустить токен
+                            {t('row.regenerateToken')}
                           </button>
                         </div>
                       </td>
@@ -2222,11 +2199,12 @@ function ScaleDeviceStatusBadge({ status }: { status: ScaleDeviceStatus }) {
 }
 
 function ScaleSyncStatusCell({ device }: { device: ScaleDevice }) {
+  const { t } = useTranslation('scales');
   if (device.lastSyncError) {
     return (
       <div className="sync-status sync-status-error">
         <span className="badge badge-sync-error">{formatSyncStatusLabel(device.lastSyncError.status)}</span>
-        <small>{device.lastSyncError.message || 'Весы сообщили об ошибке синхронизации.'}</small>
+        <small>{device.lastSyncError.message || t('syncError.fallbackMessage')}</small>
         <small>{formatDateTime(device.lastSyncError.createdAt)}</small>
       </div>
     );
@@ -2239,9 +2217,9 @@ function ScaleSyncStatusCell({ device }: { device: ScaleDevice }) {
   );
 }
 
-function formatVersionLabel(version: CatalogVersionHistoryItem | null | undefined) {
+function formatVersionLabel(version: CatalogVersionHistoryItem | null | undefined, noneLabel: string) {
   if (!version) {
-    return 'Нет опубликованной версии';
+    return noneLabel;
   }
 
   return `v${version.versionNumber} (${version.id})`;
@@ -2256,6 +2234,7 @@ function shortChecksum(value: string | null | undefined) {
 }
 
 function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string; userRole: AuthUser['role']; currentVersion: CatalogVersionHistoryItem | null }) {
+  const { t } = useTranslation('publishing');
   const { data: versionsData, error: versionsError, isLoading: versionsLoading, isFetching: versionsFetching, refetch } = useGetCatalogVersionsQuery(storeId);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [validateCatalog, { isLoading: validating }] = useValidateCatalogMutation();
@@ -2273,7 +2252,7 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+      throw new Error(t('errors.csrf'));
     }
     return csrfData;
   }
@@ -2293,7 +2272,7 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось выполнить проверку каталога.';
+        : t('errors.validateFailed');
       setActionError(message);
     }
   }
@@ -2302,7 +2281,7 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
     setActionError(null);
 
     if (!canPublish) {
-      setActionError('Перед публикацией запустите проверку и исправьте блокирующие ошибки.');
+      setActionError(t('errors.notReady'));
       return;
     }
 
@@ -2318,7 +2297,7 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось опубликовать каталог.';
+        : t('errors.publishFailed');
       setActionError(message);
     }
   }
@@ -2327,73 +2306,73 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
     <section className="publishing-tab" aria-labelledby="publishing-title">
       <div className="panel-heading publishing-heading">
         <div>
-          <p className="eyebrow">Версии и публикация</p>
-          <h3 id="publishing-title">Проверка и публикация версий каталога</h3>
-          <p className="muted">После публикации каталога последующие изменения требуют новой проверки и новой версии.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="publishing-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         {isAdmin && (
           <div className="action-row">
             <button className="secondary-button" type="button" onClick={handleValidate} disabled={validating || publishing}>
-              {validating ? 'Проверяем...' : 'Запустить проверку'}
+              {validating ? t('actions.validating') : t('actions.validate')}
             </button>
             <button type="button" onClick={handlePublish} disabled={publishing || validating || !canPublish}>
-              {publishing ? 'Публикуем...' : 'Опубликовать каталог'}
+              {publishing ? t('actions.publishing') : t('actions.publish')}
             </button>
           </div>
         )}
       </div>
 
       <div className="publication-status-card">
-        <strong>Текущий опубликованный каталог</strong>
-        <span>{formatVersionLabel(displayedCurrentVersion)}</span>
-        {displayedCurrentVersion?.publishedAt && <small>Опубликован {formatDateTime(displayedCurrentVersion.publishedAt)}</small>}
+        <strong>{t('currentVersion.heading')}</strong>
+        <span>{formatVersionLabel(displayedCurrentVersion, t('currentVersion.none'))}</span>
+        {displayedCurrentVersion?.publishedAt && <small>{t('currentVersion.publishedAt', { date: formatDateTime(displayedCurrentVersion.publishedAt) })}</small>}
       </div>
 
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
       {lastPublished && (
         <div className="status status-ok" role="status">
-          Версия <strong>v{lastPublished.versionNumber}</strong> опубликована {formatDateTime(lastPublished.publishedAt)}.
+          {t('notices.published', { versionNumber: lastPublished.versionNumber, date: formatDateTime(lastPublished.publishedAt) })}
         </div>
       )}
 
       {isAdmin && validation ? (
         <div className="validation-grid">
           <div className={`validation-summary ${validation.canPublish ? 'validation-summary-ok' : 'validation-summary-blocked'}`}>
-            <strong>{validation.canPublish ? 'Готово к публикации' : 'Публикация заблокирована'}</strong>
-            <span>{validation.blockingErrors.length} блокирующих ошибок · {validation.warnings.length} предупреждений</span>
-            <span>{validation.summary.categoryCount} категорий · {validation.summary.activePlacementCount} активных товаров · {validation.summary.activeBannerCount} активных баннеров</span>
+            <strong>{validation.canPublish ? t('validation.ready') : t('validation.blocked')}</strong>
+            <span>{t('validation.issueCounts', { errors: validation.blockingErrors.length, warnings: validation.warnings.length })}</span>
+            <span>{t('validation.counts', { categories: validation.summary.categoryCount, products: validation.summary.activePlacementCount, banners: validation.summary.activeBannerCount })}</span>
           </div>
-          <IssueList title="Блокирующие ошибки" issues={validation.blockingErrors} emptyText="Блокирующих ошибок нет." tone="error" />
-          <IssueList title="Предупреждения" issues={validation.warnings} emptyText="Предупреждений нет." tone="warning" />
+          <IssueList title={t('issues.errorsTitle')} issues={validation.blockingErrors} emptyText={t('issues.errorsEmpty')} tone="error" />
+          <IssueList title={t('issues.warningsTitle')} issues={validation.warnings} emptyText={t('issues.warningsEmpty')} tone="warning" />
         </div>
       ) : isAdmin ? (
-        <div className="empty-state">Запустите проверку, чтобы увидеть ошибки, предупреждения и готовность к публикации.</div>
+        <div className="empty-state">{t('emptyState.adminPreValidate')}</div>
       ) : (
-        <div className="empty-state">Операторы могут отслеживать опубликованную версию и статус синхронизации весов. Публикация доступна только администраторам.</div>
+        <div className="empty-state">{t('emptyState.operator')}</div>
       )}
 
       <div className="version-history-heading">
         <div>
-          <h4>История версий</h4>
-          <p className="muted">Опубликованные версии содержат номер, дату публикации, автора и контрольную сумму пакета.</p>
+          <h4>{t('history.heading')}</h4>
+          <p className="muted">{t('history.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={versionsFetching}>
-          {versionsFetching ? 'Обновляем...' : 'Обновить историю'}
+          {versionsFetching ? t('history.refreshing') : t('history.refresh')}
         </button>
       </div>
 
-      {versionsLoading && <div className="status status-loading">Загружаем историю версий...</div>}
+      {versionsLoading && <div className="status status-loading">{t('history.loading')}</div>}
       {versionsErrorMessage && <div className="form-error" role="alert">{versionsErrorMessage}</div>}
-      {!versionsLoading && !versionsErrorMessage && versions.length === 0 && <div className="empty-state">Опубликованных версий пока нет.</div>}
+      {!versionsLoading && !versionsErrorMessage && versions.length === 0 && <div className="empty-state">{t('history.empty')}</div>}
       {versions.length > 0 && (
         <div className="version-table-wrap">
           <table className="version-table">
             <thead>
               <tr>
-                <th>Версия</th>
-                <th>Опубликована</th>
-                <th>Автор</th>
-                <th>Контрольная сумма</th>
+                <th>{t('history.columns.version')}</th>
+                <th>{t('history.columns.publishedAt')}</th>
+                <th>{t('history.columns.author')}</th>
+                <th>{t('history.columns.checksum')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2401,7 +2380,7 @@ function PublishingTab({ storeId, userRole, currentVersion }: { storeId: string;
                 <tr key={version.id}>
                   <td>v{version.versionNumber}</td>
                   <td>{formatDateTime(version.publishedAt)}</td>
-                  <td>{version.publishedBy ?? 'Система'}</td>
+                  <td>{version.publishedBy ?? t('history.row.systemAuthor')}</td>
                   <td><code title={version.checksum}>{shortChecksum(version.checksum)}</code></td>
                 </tr>
               ))}
@@ -2435,6 +2414,7 @@ function IssueList({ title, issues, emptyText, tone }: { title: string; issues: 
 }
 
 function PricesTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('prices');
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [missingPrice, setMissingPrice] = useState<'all' | 'missing' | 'priced'>('all');
@@ -2475,66 +2455,66 @@ function PricesTab({ storeId }: { storeId: string }) {
     <section className="prices-tab" aria-labelledby="prices-title">
       <div className="panel-heading prices-heading">
         <div>
-          <p className="eyebrow">Цены</p>
-          <h3 id="prices-title">Цены товаров магазина</h3>
-          <p className="muted">Товары из активного каталога этого магазина.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="prices-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить цены'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
       <div className="price-filters">
         <label>
-          Поиск
+          {t('filters.search')}
           <input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Название, короткое название, PLU, SKU или штрихкод"
+            placeholder={t('filters.searchPlaceholder')}
           />
         </label>
         <label>
-          Категория
+          {t('filters.category')}
           <select value={categoryId} onChange={(event) => handleCategoryChange(event.target.value)}>
-            <option value="">Все категории</option>
+            <option value="">{t('filters.categoryAll')}</option>
             {categoryOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
         </label>
         <label>
-          Статус цены
+          {t('filters.priceStatus')}
           <select
             value={missingPrice}
             onChange={(event) => handleMissingPriceChange(event.target.value as 'all' | 'missing' | 'priced')}
           >
-            <option value="all">Все товары</option>
-            <option value="missing">Только без цены</option>
-            <option value="priced">Только с ценой</option>
+            <option value="all">{t('filters.priceStatusAll')}</option>
+            <option value="missing">{t('filters.priceStatusMissing')}</option>
+            <option value="priced">{t('filters.priceStatusPriced')}</option>
           </select>
         </label>
       </div>
 
-      {isLoading && <div className="status status-loading">Загружаем цены активного каталога...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && prices.length === 0 && <div className="empty-state">По этим фильтрам товаров нет.</div>}
+      {!isLoading && !errorMessage && prices.length === 0 && <div className="empty-state">{t('tab.emptyFiltered')}</div>}
 
-      <Pagination meta={pricesMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="товаров" />
+      <Pagination meta={pricesMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label={t('tab.paginationLabel')} />
 
       {prices.length > 0 && (
         <div className="price-table-wrap">
           <table className="price-table">
             <thead>
               <tr>
-                <th>Товар</th>
-                <th>Короткое название</th>
-                <th>PLU</th>
-                <th>SKU/штрихкод</th>
-                <th>Категория</th>
-                <th>Текущая цена</th>
-                <th>Ед.</th>
-                <th>Статус</th>
-                <th>Обновлена</th>
+                <th>{t('columns.product')}</th>
+                <th>{t('columns.shortName')}</th>
+                <th>{t('columns.plu')}</th>
+                <th>{t('columns.skuBarcode')}</th>
+                <th>{t('columns.category')}</th>
+                <th>{t('columns.currentPrice')}</th>
+                <th>{t('columns.unit')}</th>
+                <th>{t('columns.status')}</th>
+                <th>{t('columns.updatedAt')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2550,6 +2530,7 @@ function PricesTab({ storeId }: { storeId: string }) {
 }
 
 function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
+  const { t } = useTranslation('prices');
   const currentPriceValue = row.currentPrice?.price ?? '';
   const savedCurrency = row.currentPrice?.currency;
   const initialCurrency: AllowedCurrency = (ALLOWED_CURRENCIES as readonly string[]).includes(savedCurrency ?? '')
@@ -2577,13 +2558,13 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     setRowError(null);
 
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      setRowError('Введите цену больше 0.');
+      setRowError(t('errors.priceMustBePositive'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setRowError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setRowError(t('errors.csrf'));
       return;
     }
 
@@ -2600,7 +2581,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось сохранить цену.';
+        : t('errors.saveFailed');
       setRowError(message);
     }
   }
@@ -2609,8 +2590,8 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     <tr className={rowClassName}>
       <td>
         <strong>{row.product.name}</strong>
-        {row.missingPrice && <span className="price-warning">Нет цены</span>}
-        {(hasInvalidPrice || hasInvalidSavedPrice) && <span className="price-warning">Некорректная цена</span>}
+        {row.missingPrice && <span className="price-warning">{t('row.noPrice')}</span>}
+        {(hasInvalidPrice || hasInvalidSavedPrice) && <span className="price-warning">{t('row.invalidPrice')}</span>}
       </td>
       <td>{row.product.shortName}</td>
       <td>{row.product.defaultPluCode}</td>
@@ -2619,17 +2600,17 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
       <td>
         <form className="inline-price-form" onSubmit={handleSubmit}>
           <input
-            aria-label={`Цена для ${row.product.name}`}
+            aria-label={t('row.priceAriaLabel', { name: row.product.name })}
             inputMode="decimal"
             min="0.01"
             onChange={(event) => setPriceValue(event.target.value)}
-            placeholder="0.00"
+            placeholder={t('row.pricePlaceholder')}
             step="0.01"
             type="number"
             value={priceValue}
           />
           <select
-            aria-label={`Валюта для ${row.product.name}`}
+            aria-label={t('row.currencyAriaLabel', { name: row.product.name })}
             disabled={currencyLocked}
             onChange={(event) => setCurrency(event.target.value as AllowedCurrency)}
             value={currency}
@@ -2639,7 +2620,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
             ))}
           </select>
           <button type="submit" disabled={isLoading || hasInvalidPrice || !isDirty}>
-            {isLoading ? 'Сохраняем...' : 'Сохранить'}
+            {isLoading ? t('row.saving') : t('row.save')}
           </button>
         </form>
         {rowError && <div className="inline-error" role="alert">{rowError}</div>}
@@ -2653,6 +2634,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
 
 
 function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('products');
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProductStatus | 'all'>('all');
@@ -2677,25 +2659,25 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
     <section className="panel" aria-labelledby="products-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Товары</p>
-          <h2 id="products-title">Каталог товаров</h2>
-          <p className="muted">Ищите и управляйте товарами с PLU для каталогов и цен.</p>
+          <p className="eyebrow">{t('list.eyebrow')}</p>
+          <h2 id="products-title">{t('list.title')}</h2>
+          <p className="muted">{t('list.description')}</p>
         </div>
         <div className="action-row">
           <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? 'Обновляем...' : 'Обновить'}
+            {isFetching ? t('list.refreshing') : t('list.refresh')}
           </button>
-          <button type="button" onClick={() => onNavigate({ name: 'product-create' })}>Создать товар</button>
+          <button type="button" onClick={() => onNavigate({ name: 'product-create' })}>{t('list.create')}</button>
         </div>
       </div>
 
       <form className="product-search" onSubmit={handleSearch}>
         <label>
-          Поиск
-          <input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="Название, короткое название, PLU, SKU или штрихкод" />
+          {t('list.search')}
+          <input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={t('list.searchPlaceholder')} />
         </label>
         <label>
-          Статус
+          {t('list.status')}
           <select
             value={status}
             onChange={(event) => {
@@ -2703,34 +2685,34 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
               setOffset(0);
             }}
           >
-            <option value="all">Все статусы</option>
-            <option value="active">Активен</option>
-            <option value="inactive">Неактивен</option>
-            <option value="archived">В архиве</option>
+            <option value="all">{t('list.allStatuses')}</option>
+            <option value="active">{t('statuses.active', { ns: 'common' })}</option>
+            <option value="inactive">{t('statuses.inactive', { ns: 'common' })}</option>
+            <option value="archived">{t('statuses.archived', { ns: 'common' })}</option>
           </select>
         </label>
-        <button type="submit">Найти</button>
+        <button type="submit">{t('list.find')}</button>
       </form>
 
-      {isLoading && <div className="status status-loading">Загружаем товары...</div>}
+      {isLoading && <div className="status status-loading">{t('list.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && products.length === 0 && <div className="empty-state">Товары не найдены.</div>}
+      {!isLoading && !errorMessage && products.length === 0 && <div className="empty-state">{t('list.empty')}</div>}
 
-      <Pagination meta={productsMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="товаров" />
+      <Pagination meta={productsMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label={t('list.paginationLabel')} />
 
       {products.length > 0 && (
         <div className="product-table-wrap">
           <table className="product-table">
             <thead>
               <tr>
-                <th>PLU</th>
-                <th>Название</th>
-                <th>Короткое название</th>
-                <th>SKU</th>
-                <th>Штрихкод</th>
-                <th>Ед.</th>
-                <th>Статус</th>
-                <th>Действия</th>
+                <th>{t('list.columns.plu')}</th>
+                <th>{t('list.columns.name')}</th>
+                <th>{t('list.columns.shortName')}</th>
+                <th>{t('list.columns.sku')}</th>
+                <th>{t('list.columns.barcode')}</th>
+                <th>{t('list.columns.unit')}</th>
+                <th>{t('list.columns.status')}</th>
+                <th>{t('list.columns.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2745,7 +2727,7 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
                   <td><span className={`badge badge-${product.status}`}>{formatStatusLabel(product.status)}</span></td>
                   <td>
                     <button className="secondary-button table-action" type="button" onClick={() => onNavigate({ name: 'product-edit', productId: product.id })}>
-                      Изменить
+                      {t('list.actions.edit')}
                     </button>
                   </td>
                 </tr>
@@ -2759,6 +2741,7 @@ function ProductsPage({ onNavigate }: { onNavigate: (view: DashboardView) => voi
 }
 
 function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'edit'; product?: Product; onCancel: () => void; onSaved: (product: Product) => void }) {
+  const { t } = useTranslation('products');
   const [values, setValues] = useState<ProductFormValues>({
     defaultPluCode: product?.defaultPluCode ?? '',
     name: product?.name ?? '',
@@ -2799,18 +2782,18 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
 
     const filename = file.name.toLowerCase();
     if (filename.endsWith('.gif') || file.type === 'image/gif') {
-      setUploadError('GIF не поддерживается. Загрузите JPG, PNG или WebP.');
+      setUploadError(t('editor.upload.errors.gifNotSupported'));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Файл изображения слишком большой. Загрузите изображение до 2 МБ.');
+      setUploadError(t('editor.upload.errors.tooLarge'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setUploadError('Не удалось подготовить защищённую загрузку. Повторите попытку.');
+      setUploadError(t('editor.upload.errors.csrf'));
       return;
     }
 
@@ -2825,9 +2808,9 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
         imageUrl: response.fileAsset.publicUrl,
         imageFileAssetId: response.fileAsset.id,
       }));
-      setUploadNotice(`Файл ${response.fileAsset.originalFileName} загружен. Сохраните товар, чтобы закрепить URL изображения.`);
+      setUploadNotice(t('editor.upload.noticeSaved', { name: response.fileAsset.originalFileName }));
     } catch (error) {
-      setUploadError(errorMessageFromUnknown(error, 'Не удалось загрузить изображение.'));
+      setUploadError(errorMessageFromUnknown(error, t('editor.upload.errors.uploadFailed')));
     }
   }
 
@@ -2838,13 +2821,13 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
     setSavedProduct(null);
 
     if (!values.defaultPluCode.trim() || !values.name.trim() || !values.shortName.trim() || !values.unit || !values.status) {
-      setFormError('Укажите PLU, название, короткое название, единицу измерения и статус.');
+      setFormError(t('editor.errors.missingFields'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setFormError(t('editor.errors.csrf'));
       return;
     }
 
@@ -2878,65 +2861,65 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
         onSaved(response.product);
       }
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось сохранить товар.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('editor.errors.saveFailed');
       setFormError(message);
     }
   }
 
   return (
     <section className="panel" aria-labelledby="product-form-title">
-      <button className="link-button" type="button" onClick={onCancel}>← Назад к товарам</button>
-      <p className="eyebrow">{mode === 'create' ? 'Создание товара' : 'Редактирование товара'}</p>
-      <h2 id="product-form-title">{mode === 'create' ? 'Новый товар' : product?.name}</h2>
+      <button className="link-button" type="button" onClick={onCancel}>{t('editor.back')}</button>
+      <p className="eyebrow">{mode === 'create' ? t('editor.eyebrow.create') : t('editor.eyebrow.edit')}</p>
+      <h2 id="product-form-title">{mode === 'create' ? t('editor.titleCreate') : product?.name}</h2>
 
       {mode === 'edit' && existingPlacementCount > 0 && (
         <div className="status status-warning" role="status">
-          Товар используется в активных размещениях: {existingPlacementCount}. Изменение может повлиять на потребителей каталога.
+          {t('editor.placementWarning', { count: existingPlacementCount })}
         </div>
       )}
       {warning && (
         <div className="status status-warning" role="alert">
-          {warning.message} {warning.activePlacementCount ? `Активные размещения: ${warning.activePlacementCount}.` : ''}
-          <div className="action-row"><button type="button" onClick={() => savedProduct && onSaved(savedProduct)}>Назад к товарам</button></div>
+          {warning.message} {warning.activePlacementCount ? t('editor.activePlacementsSuffix', { count: warning.activePlacementCount }) : ''}
+          <div className="action-row"><button type="button" onClick={() => savedProduct && onSaved(savedProduct)}>{t('editor.backToProducts')}</button></div>
         </div>
       )}
 
       <form className="product-form" onSubmit={handleSubmit}>
         <div className="product-form-grid">
-          <label>PLU / defaultPluCode *<input value={values.defaultPluCode} onChange={(event) => updateValue('defaultPluCode', event.target.value)} placeholder="1001" /></label>
-          <label>Название *<input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder="Бананы" /></label>
-          <label>Короткое название *<input value={values.shortName} onChange={(event) => updateValue('shortName', event.target.value)} placeholder="Бананы" /></label>
-          <label>Ед. *<select value={values.unit} onChange={(event) => updateValue('unit', event.target.value as ProductUnit)}><option value="kg">кг</option><option value="g">г</option><option value="piece">шт.</option></select></label>
-          <label>Статус *<select value={values.status} onChange={(event) => updateValue('status', event.target.value as ProductStatus)}><option value="active">Активен</option><option value="inactive">Неактивен</option><option value="archived">В архиве</option></select></label>
-          <label>SKU<input value={values.sku ?? ''} onChange={(event) => updateValue('sku', event.target.value)} placeholder="Необязательный SKU" /></label>
-          <label>Штрихкод<input value={values.barcode ?? ''} onChange={(event) => updateValue('barcode', event.target.value)} placeholder="Необязательный штрихкод" /></label>
-          <label>URL изображения<input value={values.imageUrl ?? ''} onChange={(event) => updateValue('imageUrl', event.target.value)} placeholder="Необязательный URL изображения" /></label>
+          <label>{t('editor.fields.defaultPluCode')}<input value={values.defaultPluCode} onChange={(event) => updateValue('defaultPluCode', event.target.value)} placeholder={t('editor.placeholders.defaultPluCode')} /></label>
+          <label>{t('editor.fields.name')}<input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder={t('editor.placeholders.name')} /></label>
+          <label>{t('editor.fields.shortName')}<input value={values.shortName} onChange={(event) => updateValue('shortName', event.target.value)} placeholder={t('editor.placeholders.shortName')} /></label>
+          <label>{t('editor.fields.unit')}<select value={values.unit} onChange={(event) => updateValue('unit', event.target.value as ProductUnit)}><option value="kg">{t('unit.kg')}</option><option value="g">{t('unit.g')}</option><option value="piece">{t('unit.piece')}</option></select></label>
+          <label>{t('editor.fields.status')}<select value={values.status} onChange={(event) => updateValue('status', event.target.value as ProductStatus)}><option value="active">{t('statuses.active', { ns: 'common' })}</option><option value="inactive">{t('statuses.inactive', { ns: 'common' })}</option><option value="archived">{t('statuses.archived', { ns: 'common' })}</option></select></label>
+          <label>{t('editor.fields.sku')}<input value={values.sku ?? ''} onChange={(event) => updateValue('sku', event.target.value)} placeholder={t('editor.placeholders.sku')} /></label>
+          <label>{t('editor.fields.barcode')}<input value={values.barcode ?? ''} onChange={(event) => updateValue('barcode', event.target.value)} placeholder={t('editor.placeholders.barcode')} /></label>
+          <label>{t('editor.fields.imageUrl')}<input value={values.imageUrl ?? ''} onChange={(event) => updateValue('imageUrl', event.target.value)} placeholder={t('editor.placeholders.imageUrl')} /></label>
         </div>
-        <label>Описание<input value={values.description ?? ''} onChange={(event) => updateValue('description', event.target.value)} placeholder="Необязательное описание" /></label>
+        <label>{t('editor.fields.description')}<input value={values.description ?? ''} onChange={(event) => updateValue('description', event.target.value)} placeholder={t('editor.placeholders.description')} /></label>
         <div className="product-image-upload">
           <label>
-            Загрузка изображения товара
+            {t('editor.upload.label')}
             <input accept="image/png,image/jpeg,image/webp" disabled={uploadingImage || isSaving} onChange={handleImageUpload} type="file" />
           </label>
-          <p className="muted">Загрузите JPG, PNG или WebP до 2 МБ. Публичный URL сохранится в поле URL изображения после сохранения товара.</p>
+          <p className="muted">{t('editor.upload.hint')}</p>
           {values.imageUrl && (
             <div className="product-image-preview">
-              <img src={values.imageUrl} alt="Выбранный товар" />
+              <img src={values.imageUrl} alt={t('editor.preview.alt')} />
               <div>
-                <strong>Выбранное изображение</strong>
+                <strong>{t('editor.preview.label')}</strong>
                 <small>{values.imageUrl}</small>
               </div>
             </div>
           )}
-          {uploadingImage && <div className="status status-loading">Загружаем изображение...</div>}
+          {uploadingImage && <div className="status status-loading">{t('editor.upload.uploading')}</div>}
           {uploadNotice && <div className="status status-ok" role="status">{uploadNotice}</div>}
           {uploadError && <div className="form-error" role="alert">{uploadError}</div>}
         </div>
 
         {formError && <div className="form-error" role="alert">{formError}</div>}
         <div className="action-row">
-          <button type="submit" disabled={isSaving}>{isSaving ? 'Сохраняем...' : 'Сохранить товар'}</button>
-          <button className="secondary-button" type="button" onClick={onCancel}>Отмена</button>
+          <button type="submit" disabled={isSaving}>{isSaving ? t('editor.saving') : t('editor.submit')}</button>
+          <button className="secondary-button" type="button" onClick={onCancel}>{t('editor.cancel')}</button>
         </div>
       </form>
     </section>
@@ -2944,6 +2927,7 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
 }
 
 function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('products');
   const hasValidProductId = isValidRouteId(productId);
   const { currentData, error, isLoading } = useGetProductQuery(productId, {
     skip: !hasValidProductId,
@@ -2951,15 +2935,15 @@ function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavi
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (!hasValidProductId) {
-    return <RouteNotFoundPanel returnTo="products" message="Ссылка на редактирование товара пустая или некорректная. Откройте товар из списка." onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="products" messageKey="editInvalid" onNavigate={onNavigate} />;
   }
 
   if (isLoading) {
-    return <section className="panel"><div className="status status-loading">Загружаем товар для редактирования...</div></section>;
+    return <section className="panel"><div className="status status-loading">{t('edit.loading')}</div></section>;
   }
 
   if (errorMessage || !currentData?.product) {
-    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? 'Товар не найден.'}</div></section>;
+    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? t('edit.notFound')}</div></section>;
   }
 
   return (
@@ -2973,6 +2957,7 @@ function ProductEditRoute({ productId, onNavigate }: { productId: string; onNavi
 }
 
 function StoreForm({ mode, store, onCancel, onSaved }: { mode: 'create' | 'edit'; store?: Store; onCancel: () => void; onSaved: (store: Store) => void }) {
+  const { t } = useTranslation('stores');
   const [values, setValues] = useState<StoreFormValues>({
     code: store?.code ?? '',
     name: store?.name ?? '',
@@ -2995,13 +2980,13 @@ function StoreForm({ mode, store, onCancel, onSaved }: { mode: 'create' | 'edit'
     setFormError(null);
 
     if (!values.code.trim() || !values.name.trim()) {
-      setFormError('Укажите код и название магазина.');
+      setFormError(t('form.errors.missingFields'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setFormError(t('form.errors.csrf'));
       return;
     }
 
@@ -3024,47 +3009,47 @@ function StoreForm({ mode, store, onCancel, onSaved }: { mode: 'create' | 'edit'
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось сохранить магазин.';
+        : t('form.errors.saveFailed');
       setFormError(message);
     }
   }
 
   return (
     <section className="panel" aria-labelledby="store-form-title">
-      <button className="link-button" type="button" onClick={onCancel}>← Назад к магазинам</button>
-      <p className="eyebrow">{mode === 'create' ? 'Создание магазина' : 'Редактирование магазина'}</p>
-      <h2 id="store-form-title">{mode === 'create' ? 'Новый магазин' : store?.name}</h2>
+      <button className="link-button" type="button" onClick={onCancel}>{t('form.back')}</button>
+      <p className="eyebrow">{mode === 'create' ? t('form.eyebrow.create') : t('form.eyebrow.edit')}</p>
+      <h2 id="store-form-title">{mode === 'create' ? t('form.titleCreate') : store?.name}</h2>
 
       <form className="store-form" onSubmit={handleSubmit}>
         <label>
-          Код магазина
-          <input value={values.code} onChange={(event) => updateValue('code', event.target.value)} placeholder="STORE-002" />
+          {t('form.fields.code')}
+          <input value={values.code} onChange={(event) => updateValue('code', event.target.value)} placeholder={t('form.placeholders.code')} />
         </label>
         <label>
-          Название магазина
-          <input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder="Центральный магазин" />
+          {t('form.fields.name')}
+          <input value={values.name} onChange={(event) => updateValue('name', event.target.value)} placeholder={t('form.placeholders.name')} />
         </label>
         <label>
-          Адрес
-          <input value={values.address ?? ''} onChange={(event) => updateValue('address', event.target.value)} placeholder="Город, улица" />
+          {t('form.fields.address')}
+          <input value={values.address ?? ''} onChange={(event) => updateValue('address', event.target.value)} placeholder={t('form.placeholders.address')} />
         </label>
         <label>
-          Часовой пояс
-          <input value={values.timezone ?? ''} onChange={(event) => updateValue('timezone', event.target.value)} placeholder="Europe/Moscow" />
+          {t('form.fields.timezone')}
+          <input value={values.timezone ?? ''} onChange={(event) => updateValue('timezone', event.target.value)} placeholder={t('form.placeholders.timezone')} />
         </label>
         <label>
-          Статус
+          {t('form.fields.status')}
           <select value={values.status} onChange={(event) => updateValue('status', event.target.value as StoreStatus)}>
-            <option value="active">Активен</option>
-            <option value="inactive">Неактивен</option>
-            <option value="archived">В архиве</option>
+            <option value="active">{t('form.statusOptions.active')}</option>
+            <option value="inactive">{t('form.statusOptions.inactive')}</option>
+            <option value="archived">{t('form.statusOptions.archived')}</option>
           </select>
         </label>
 
         {formError && <div className="form-error" role="alert">{formError}</div>}
         <div className="action-row">
-          <button type="submit" disabled={isSaving}>{isSaving ? 'Сохраняем...' : 'Сохранить магазин'}</button>
-          <button className="secondary-button" type="button" onClick={onCancel}>Отмена</button>
+          <button type="submit" disabled={isSaving}>{isSaving ? t('form.saving') : t('form.submit')}</button>
+          <button className="secondary-button" type="button" onClick={onCancel}>{t('form.cancel')}</button>
         </div>
       </form>
     </section>
@@ -3072,6 +3057,7 @@ function StoreForm({ mode, store, onCancel, onSaved }: { mode: 'create' | 'edit'
 }
 
 function StoreEditRoute({ storeId, onNavigate }: { storeId: string; onNavigate: (view: DashboardView) => void }) {
+  const { t } = useTranslation('stores');
   const hasValidStoreId = isValidRouteId(storeId);
   const { currentData, error, isLoading } = useGetStoreQuery(storeId, {
     skip: !hasValidStoreId,
@@ -3082,15 +3068,15 @@ function StoreEditRoute({ storeId, onNavigate }: { storeId: string; onNavigate: 
   const errorMessage = error && 'message' in error ? error.message : null;
 
   if (!hasValidStoreId) {
-    return <RouteNotFoundPanel returnTo="stores" message="Ссылка на редактирование магазина пустая или некорректная. Откройте магазин из списка." onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo="stores" messageKey="editInvalid" onNavigate={onNavigate} />;
   }
 
   if (isLoading) {
-    return <section className="panel"><div className="status status-loading">Загружаем магазин для редактирования...</div></section>;
+    return <section className="panel"><div className="status status-loading">{t('edit.loading')}</div></section>;
   }
 
   if (errorMessage || !currentData?.store) {
-    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? 'Магазин не найден.'}</div></section>;
+    return <section className="panel"><div className="form-error" role="alert">{errorMessage ?? t('edit.notFound')}</div></section>;
   }
 
   return (
@@ -3103,42 +3089,37 @@ function StoreEditRoute({ storeId, onNavigate }: { storeId: string; onNavigate: 
   );
 }
 
-function RouteNotFoundPanel({ returnTo, message, onNavigate }: { returnTo: 'stores' | 'products'; message: string; onNavigate: (view: DashboardView) => void }) {
+function RouteNotFoundPanel({
+  returnTo,
+  messageKey,
+  onNavigate,
+}: {
+  returnTo: 'stores' | 'products';
+  messageKey: 'listInvalid' | 'detailsInvalid' | 'editInvalid';
+  onNavigate: (view: DashboardView) => void;
+}) {
+  const { t } = useTranslation(returnTo);
   return (
     <section className="panel" aria-labelledby="route-not-found-title">
-      <p className="eyebrow">Не найдено</p>
-      <h2 id="route-not-found-title">Раздел недоступен</h2>
-      <p className="muted">{message}</p>
+      <p className="eyebrow">{t('routeNotFound.eyebrow')}</p>
+      <h2 id="route-not-found-title">{t('routeNotFound.title')}</h2>
+      <p className="muted">{t(`routeNotFound.${messageKey}`)}</p>
       <button type="button" onClick={() => onNavigate({ name: returnTo })}>
-        Назад к {returnTo === 'stores' ? 'магазинам' : 'товарам'}
+        {t('routeNotFound.backToList')}
       </button>
     </section>
   );
 }
 
-const accessDeniedCopy = {
-  'global-logs': {
-    heading: 'Общие журналы доступны только администратору',
-    description: 'Операторы не могут открывать общий аудит и журналы синхронизации. Обратитесь к администратору, если нужен доступ.',
-  },
-  'users-access': {
-    heading: 'Пользователи и доступ доступны только администратору',
-    description: 'Операторы не могут управлять пользователями. Обратитесь к администратору, если нужен доступ к дополнительным магазинам.',
-  },
-  'store-management': {
-    heading: 'Управление магазинами доступно только администратору',
-    description: 'Операторы не могут создавать и редактировать магазины. Обратитесь к администратору, если магазин нужно изменить.',
-  },
-} as const;
+type AccessDeniedRoute = 'global-logs' | 'users-access' | 'store-management';
 
-function AccessDeniedPanel({ route }: { route: keyof typeof accessDeniedCopy }) {
-  const copy = accessDeniedCopy[route];
-
+function AccessDeniedPanel({ route }: { route: AccessDeniedRoute }) {
+  const { t } = useTranslation('dashboard');
   return (
     <section className="panel" aria-labelledby="access-denied-title">
-      <p className="eyebrow">Доступ запрещён</p>
-      <h2 id="access-denied-title">{copy.heading}</h2>
-      <p className="muted">{copy.description}</p>
+      <p className="eyebrow">{t('accessDenied.eyebrow')}</p>
+      <h2 id="access-denied-title">{t(`accessDenied.${route}.heading`)}</h2>
+      <p className="muted">{t(`accessDenied.${route}.description`)}</p>
     </section>
   );
 }
@@ -3150,6 +3131,7 @@ function getDefaultInviteExpiry() {
 }
 
 function UsersAccessPage({ currentUser }: { currentUser: AuthUser }) {
+  const { t } = useTranslation('users');
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data, error, isLoading, isFetching, refetch } = useListUsersQuery({ includeDeleted });
   const users = data?.users ?? [];
@@ -3159,26 +3141,26 @@ function UsersAccessPage({ currentUser }: { currentUser: AuthUser }) {
     <section className="panel" aria-labelledby="users-access-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Пользователи и доступ</p>
-          <h2 id="users-access-title">Приглашения, роли и магазины операторов</h2>
-          <p className="muted">Создавайте приглашения, меняйте роли, блокируйте пользователей и назначайте магазины операторам.</p>
+          <p className="eyebrow">{t('page.eyebrow')}</p>
+          <h2 id="users-access-title">{t('page.title')}</h2>
+          <p className="muted">{t('page.description')}</p>
         </div>
         <div className="action-row">
           <label className="compact-checkbox">
             <input type="checkbox" checked={includeDeleted} onChange={(event) => setIncludeDeleted(event.target.checked)} />
-            Показывать удалённых
+            {t('page.showDeleted')}
           </label>
           <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? 'Обновляем...' : 'Обновить пользователей'}
+            {isFetching ? t('page.refreshing') : t('page.refresh')}
           </button>
         </div>
       </div>
 
       <InviteForm />
 
-      {isLoading && <div className="status status-loading">Загружаем пользователей...</div>}
+      {isLoading && <div className="status status-loading">{t('page.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && users.length === 0 && <div className="empty-state">Пользователи не найдены.</div>}
+      {!isLoading && !errorMessage && users.length === 0 && <div className="empty-state">{t('page.empty')}</div>}
       {users.length > 0 && (
         <div className="users-list">
           {users.map((managedUser) => (
@@ -3191,6 +3173,7 @@ function UsersAccessPage({ currentUser }: { currentUser: AuthUser }) {
 }
 
 function InviteForm() {
+  const { t } = useTranslation('users');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<AuthUser['role']>('operator');
@@ -3209,13 +3192,13 @@ function InviteForm() {
     setCancelledInviteEmail(null);
 
     if (!email.trim()) {
-      setFormError('Укажите адрес электронной почты.');
+      setFormError(t('invite.errors.missingEmail'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setFormError(t('invite.errors.csrf'));
       return;
     }
 
@@ -3234,7 +3217,7 @@ function InviteForm() {
       setRole('operator');
       setExpiresAt(getDefaultInviteExpiry());
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось создать приглашение.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('invite.errors.createFailed');
       setFormError(message);
     }
   }
@@ -3242,33 +3225,39 @@ function InviteForm() {
   return (
     <form className="invite-form" onSubmit={handleSubmit}>
       <div>
-        <p className="eyebrow">Пригласить пользователя</p>
-        <p className="muted">Приглашение будет отправлено на адрес электронной почты пользователя.</p>
+        <p className="eyebrow">{t('invite.eyebrow')}</p>
+        <p className="muted">{t('invite.description')}</p>
       </div>
       <div className="invite-grid">
-        <label>Электронная почта<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="operator@example.com" /></label>
-        <label>Полное имя<input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Необязательно" /></label>
-        <label>Роль<select value={role} onChange={(event) => setRole(event.target.value as AuthUser['role'])}><option value="operator">Оператор</option><option value="admin">Администратор</option></select></label>
-        <label>Действует до<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
+        <label>{t('invite.fields.email')}<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="operator@example.com" /></label>
+        <label>{t('invite.fields.fullName')}<input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder={t('invite.fields.fullNamePlaceholder')} /></label>
+        <label>{t('invite.fields.role')}<select value={role} onChange={(event) => setRole(event.target.value as AuthUser['role'])}><option value="operator">{t('roles.operator')}</option><option value="admin">{t('roles.admin')}</option></select></label>
+        <label>{t('invite.fields.expiresAt')}<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
       </div>
       {formError && <div className="form-error" role="alert">{formError}</div>}
       {createdInvite && (
         <div className="status status-ok" role="status">
-          Приглашение для <strong>{createdInvite.email}</strong> действует до {formatDateTime(createdInvite.expiresAt)}.<br />
-          Письмо с безопасной ссылкой отправлено пользователю.
+          <Trans
+            i18nKey="invite.created.message"
+            ns="users"
+            values={{ email: createdInvite.email, date: formatDateTime(createdInvite.expiresAt) }}
+            components={{ 1: <strong /> }}
+          />
+          <br />
+          {t('invite.created.emailNote')}
           <div style={{ marginTop: '0.5rem' }}>
             <button
               type="button"
               className="secondary-button"
               disabled={isCancelling}
               onClick={async () => {
-                const confirmed = window.confirm('Отменить приглашение? Токен станет недействительным, и по нему нельзя будет зарегистрироваться.');
+                const confirmed = window.confirm(t('invite.cancel.confirm'));
                 if (!confirmed) return;
                 setFormError(null);
                 try {
                   const csrfData = csrf ?? (await refetchCsrf()).data;
                   if (!csrfData) {
-                    setFormError('Не удалось подготовить защищённую форму. Повторите попытку.');
+                    setFormError(t('invite.errors.csrf'));
                     return;
                   }
                   await cancelInvite({
@@ -3279,27 +3268,33 @@ function InviteForm() {
                   setCancelledInviteEmail(createdInvite.email);
                   setCreatedInvite(null);
                 } catch (error) {
-                  const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось отменить приглашение.';
+                  const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('invite.errors.cancelFailed');
                   setFormError(message);
                 }
               }}
             >
-              {isCancelling ? 'Отменяем...' : 'Отменить приглашение'}
+              {isCancelling ? t('invite.cancel.cancelling') : t('invite.cancel.button')}
             </button>
           </div>
         </div>
       )}
       {cancelledInviteEmail && (
         <div className="status status-ok" role="status">
-          Приглашение для <strong>{cancelledInviteEmail}</strong> отменено.
+          <Trans
+            i18nKey="invite.cancelled"
+            ns="users"
+            values={{ email: cancelledInviteEmail }}
+            components={{ 1: <strong /> }}
+          />
         </div>
       )}
-      <button type="submit" disabled={isLoading}>{isLoading ? 'Создаём приглашение...' : 'Пригласить пользователя'}</button>
+      <button type="submit" disabled={isLoading}>{isLoading ? t('invite.submitting') : t('invite.submit')}</button>
     </form>
   );
 }
 
 function UserAccessCard({ user, currentUser }: { user: ManagedUser; currentUser: AuthUser }) {
+  const { t } = useTranslation('users');
   const [rowError, setRowError] = useState<string | null>(null);
   const { data: csrf, refetch: refetchCsrf } = useGetCsrfTokenQuery();
   const [changeRole, { isLoading: changingRole }] = useChangeUserRoleMutation();
@@ -3311,7 +3306,7 @@ function UserAccessCard({ user, currentUser }: { user: ManagedUser; currentUser:
 
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
-    if (!csrfData) throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+    if (!csrfData) throw new Error(t('card.errors.csrf'));
     return csrfData;
   }
 
@@ -3320,7 +3315,7 @@ function UserAccessCard({ user, currentUser }: { user: ManagedUser; currentUser:
     try {
       await action(await getCsrfOrThrow());
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось обновить пользователя.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('card.errors.updateFailed');
       setRowError(message);
     }
   }
@@ -3330,29 +3325,29 @@ function UserAccessCard({ user, currentUser }: { user: ManagedUser; currentUser:
       <div className="user-card-main">
         <div>
           <p className="store-code">{user.email}</p>
-          <h3>{user.fullName || 'Без имени'}</h3>
-          <p className="muted">Создан {formatDateTime(user.createdAt)} · Последний вход {formatDateTime(user.lastLoginAt)}</p>
+          <h3>{user.fullName || t('card.noName')}</h3>
+          <p className="muted">{t('card.createdAndLastLogin', { created: formatDateTime(user.createdAt), lastLogin: formatDateTime(user.lastLoginAt) })}</p>
         </div>
         <div className="store-actions">
           <span className={`badge ${statusClass}`}>{formatStatusLabel(isDeleted ? 'deleted' : user.status)}</span>
           <label className="role-control">
-            Роль
+            {t('card.role')}
             <select
               value={user.role}
               disabled={isDeleted || changingRole}
               onChange={(event) => runAction((csrfData) => changeRole({ userId: user.id, role: event.target.value as AuthUser['role'], csrfToken: csrfData.csrfToken, csrfHeaderName: csrfData.headerName }).unwrap())}
             >
-              <option value="operator">Оператор</option>
-              <option value="admin">Администратор</option>
+              <option value="operator">{t('roles.operator')}</option>
+              <option value="admin">{t('roles.admin')}</option>
             </select>
           </label>
           {user.status === 'blocked' ? (
             <button className="secondary-button" type="button" disabled={isDeleted || unblocking} onClick={() => runAction((csrfData) => unblockUser({ userId: user.id, csrfToken: csrfData.csrfToken, csrfHeaderName: csrfData.headerName }).unwrap())}>
-              {unblocking ? 'Разблокируем...' : 'Разблокировать'}
+              {unblocking ? t('card.unblocking') : t('card.unblock')}
             </button>
           ) : (
             <button className="secondary-button" type="button" disabled={isDeleted || blocking || isSelf} onClick={() => runAction((csrfData) => blockUser({ userId: user.id, csrfToken: csrfData.csrfToken, csrfHeaderName: csrfData.headerName }).unwrap())}>
-              {blocking ? 'Блокируем...' : 'Заблокировать'}
+              {blocking ? t('card.blocking') : t('card.block')}
             </button>
           )}
         </div>
@@ -3364,6 +3359,7 @@ function UserAccessCard({ user, currentUser }: { user: ManagedUser; currentUser:
 }
 
 function OperatorStoreAccess({ userId }: { userId: string }) {
+  const { t } = useTranslation('users');
   const [storeId, setStoreId] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const { data: accessData, error: accessError, isLoading: accessLoading } = useListUserStoreAccessesQuery(userId);
@@ -3378,14 +3374,14 @@ function OperatorStoreAccess({ userId }: { userId: string }) {
 
   async function getCsrfOrThrow() {
     const csrfData = csrf ?? (await refetchCsrf()).data;
-    if (!csrfData) throw new Error('Не удалось подготовить защищённую форму. Повторите попытку.');
+    if (!csrfData) throw new Error(t('access.errors.csrf'));
     return csrfData;
   }
 
   async function handleGrant() {
     setActionError(null);
     if (!storeId) {
-      setActionError('Выберите магазин для назначения.');
+      setActionError(t('access.errors.selectStore'));
       return;
     }
     try {
@@ -3393,7 +3389,7 @@ function OperatorStoreAccess({ userId }: { userId: string }) {
       await grantStoreAccess({ userId, storeId, csrfToken: csrfData.csrfToken, csrfHeaderName: csrfData.headerName }).unwrap();
       setStoreId('');
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось назначить магазин.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('access.errors.grantFailed');
       setActionError(message);
     }
   }
@@ -3404,7 +3400,7 @@ function OperatorStoreAccess({ userId }: { userId: string }) {
       const csrfData = await getCsrfOrThrow();
       await revokeStoreAccess({ userId, storeId: revokeStoreId, csrfToken: csrfData.csrfToken, csrfHeaderName: csrfData.headerName }).unwrap();
     } catch (error) {
-      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Не удалось отозвать доступ к магазину.';
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : t('access.errors.revokeFailed');
       setActionError(message);
     }
   }
@@ -3412,26 +3408,26 @@ function OperatorStoreAccess({ userId }: { userId: string }) {
   return (
     <div className="store-access-box">
       <div className="store-access-header">
-        <h4>Доступ оператора к магазинам</h4>
+        <h4>{t('access.heading')}</h4>
         <div className="access-grant-row">
-          <select value={storeId} onChange={(event) => setStoreId(event.target.value)} aria-label="Магазин для назначения">
-            <option value="">Выберите магазин</option>
+          <select value={storeId} onChange={(event) => setStoreId(event.target.value)} aria-label={t('access.storeSelectAriaLabel')}>
+            <option value="">{t('access.storeSelectPlaceholder')}</option>
             {availableStores.map((store) => <option key={store.id} value={store.id}>{store.code} · {store.name}</option>)}
           </select>
-          <button type="button" disabled={granting || !storeId} onClick={handleGrant}>{granting ? 'Назначаем...' : 'Назначить магазин'}</button>
+          <button type="button" disabled={granting || !storeId} onClick={handleGrant}>{granting ? t('access.granting') : t('access.grant')}</button>
         </div>
       </div>
-      {accessLoading && <div className="status status-loading">Загружаем доступ к магазинам...</div>}
+      {accessLoading && <div className="status status-loading">{t('access.loading')}</div>}
       {accessErrorMessage && <div className="form-error" role="alert">{accessErrorMessage}</div>}
       {actionError && <div className="inline-error" role="alert">{actionError}</div>}
-      {!accessLoading && activeAccesses.length === 0 && <div className="empty-state">Активные магазины не назначены.</div>}
+      {!accessLoading && activeAccesses.length === 0 && <div className="empty-state">{t('access.empty')}</div>}
       {activeAccesses.length > 0 && (
         <div className="access-list">
           {activeAccesses.map((access) => (
             <div className="access-item" key={access.id}>
               <span><strong>{access.store.code}</strong> · {access.store.name}</span>
               <button className="secondary-button" type="button" disabled={revoking} onClick={() => handleRevoke(access.storeId)}>
-                {revoking ? 'Отзываем...' : 'Отозвать'}
+                {revoking ? t('access.revoking') : t('access.revoke')}
               </button>
             </div>
           ))}
@@ -3583,12 +3579,12 @@ function ProblematicScaleCard({ device, onNavigate }: { device: AdminDashboardPr
         <span className={`badge badge-${device.status}`}>{formatStatusLabel(device.status)}</span>
       </div>
       <div className="reason-row">
-        {device.reasons.map((reason) => <span className="badge badge-danger" key={reason}>{formatProblemReason(reason)}</span>)}
+        {device.reasons.map((reason) => <span className="badge badge-danger" key={reason}>{t(`admin.problemReasons.${reason}`, { defaultValue: reason.replace(/_/g, ' ') })}</span>)}
       </div>
       <dl className="compact-details">
-        <div><dt>Текущая версия</dt><dd>{device.currentCatalogVersionId ?? '—'}</dd></div>
-        <div><dt>Ожидаемая версия</dt><dd>{device.expectedCatalogVersionId ?? '—'}</dd></div>
-        <div><dt>Последняя синхронизация</dt><dd>{formatDateTime(device.lastSyncAt)}</dd></div>
+        <div><dt>{t('admin.problematicScale.currentVersion')}</dt><dd>{device.currentCatalogVersionId ?? '—'}</dd></div>
+        <div><dt>{t('admin.problematicScale.expectedVersion')}</dt><dd>{device.expectedCatalogVersionId ?? '—'}</dd></div>
+        <div><dt>{t('admin.problematicScale.lastSync')}</dt><dd>{formatDateTime(device.lastSyncAt)}</dd></div>
       </dl>
       {device.lastSyncError?.message && <div className="inline-error">{device.lastSyncError.message}</div>}
       <button className="secondary-button" type="button" onClick={() => onNavigate({ name: 'store-details', storeId: device.storeId })}>
@@ -3662,7 +3658,7 @@ function OperatorStoreDashboardCard({ store, onNavigate }: { store: Store; onNav
       {(versionsLoading || scalesLoading) && <div className="status status-loading">{t('operator.storeCard.loadingPanel')}</div>}
 
       <dl className="compact-details">
-        <div><dt>{t('operator.storeCard.currentVersion')}</dt><dd>{versionsLoading ? t('operator.storeCard.versionLoading') : formatVersionLabel(currentVersion)}</dd></div>
+        <div><dt>{t('operator.storeCard.currentVersion')}</dt><dd>{versionsLoading ? t('operator.storeCard.versionLoading') : formatVersionLabel(currentVersion, t('operator.storeCard.noVersion'))}</dd></div>
         <div><dt>{t('operator.storeCard.publicationStatus')}</dt><dd>{currentVersion?.status ? formatStatusLabel(currentVersion.status) : t('operator.storeCard.publicationNone')}</dd></div>
         <div><dt>{t('operator.storeCard.syncStatus')}</dt><dd>
           {devices.length === 0
@@ -3720,7 +3716,7 @@ function DashboardContent({ user, view, onNavigate }: { user: AuthUser; view: Da
   }
 
   if (view.name === 'route-not-found') {
-    return <RouteNotFoundPanel returnTo={view.returnTo} message={view.message} onNavigate={onNavigate} />;
+    return <RouteNotFoundPanel returnTo={view.returnTo} messageKey={view.messageKey} onNavigate={onNavigate} />;
   }
 
   if (view.name === 'product-create') {
@@ -3800,7 +3796,7 @@ function Dashboard({ user }: { user: AuthUser }) {
           <p className="eyebrow">{t('productName', { ns: 'common' })}</p>
           <h1>{t('shell.welcome', { ns: 'navigation', name: displayName })}</h1>
           <p className="description">
-            {t('shell.sessionPrefix', { ns: 'navigation' })} {user.email} · {t('shell.rolePrefix', { ns: 'navigation' })} <strong>{formatRoleLabel(user.role)}</strong>
+            {t('shell.sessionPrefix', { ns: 'navigation' })} {user.email} · {t('shell.rolePrefix', { ns: 'navigation' })} <strong>{t(`shell.roles.${user.role}`, { ns: 'navigation' })}</strong>
           </p>
         </div>
         <div className="dashboard-header-actions">

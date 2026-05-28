@@ -1,0 +1,104 @@
+{
+  "list": {
+    "eyebrow": "Products",
+    "title": "Product catalog",
+    "description": "Search and manage products with PLU codes for catalogs and prices.",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "create": "Create product",
+    "search": "Search",
+    "searchPlaceholder": "Name, short name, PLU, SKU or barcode",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "find": "Find",
+    "loading": "Loading products…",
+    "empty": "No products found.",
+    "paginationLabel": "products",
+    "columns": {
+      "plu": "PLU",
+      "name": "Name",
+      "shortName": "Short name",
+      "sku": "SKU",
+      "barcode": "Barcode",
+      "unit": "Unit",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit"
+    }
+  },
+  "unit": {
+    "kg": "kg",
+    "g": "g",
+    "piece": "pc"
+  },
+  "editor": {
+    "back": "← Back to products",
+    "eyebrow": {
+      "create": "Create product",
+      "edit": "Edit product"
+    },
+    "titleCreate": "New product",
+    "placementWarning_one": "Product is used in {{count}} active placement. Changes may affect catalog consumers.",
+    "placementWarning_other": "Product is used in {{count}} active placements. Changes may affect catalog consumers.",
+    "activePlacementsSuffix": "Active placements: {{count}}.",
+    "backToProducts": "Back to products",
+    "fields": {
+      "defaultPluCode": "PLU / defaultPluCode *",
+      "name": "Name *",
+      "shortName": "Short name *",
+      "unit": "Unit *",
+      "status": "Status *",
+      "sku": "SKU",
+      "barcode": "Barcode",
+      "imageUrl": "Image URL",
+      "description": "Description"
+    },
+    "placeholders": {
+      "defaultPluCode": "1001",
+      "name": "Bananas",
+      "shortName": "Bananas",
+      "sku": "Optional SKU",
+      "barcode": "Optional barcode",
+      "imageUrl": "Optional image URL",
+      "description": "Optional description"
+    },
+    "upload": {
+      "label": "Upload product image",
+      "hint": "Upload JPG, PNG or WebP up to 2 MB. The public URL is saved in the image URL field after you save the product.",
+      "uploading": "Uploading image…",
+      "noticeSaved": "File {{name}} uploaded. Save the product to lock in the image URL.",
+      "errors": {
+        "gifNotSupported": "GIF is not supported. Upload JPG, PNG or WebP.",
+        "tooLarge": "Image file is too large. Upload an image up to 2 MB.",
+        "csrf": "Could not prepare the secured upload. Try again.",
+        "uploadFailed": "Could not upload the image."
+      }
+    },
+    "preview": {
+      "alt": "Selected product",
+      "label": "Selected image"
+    },
+    "errors": {
+      "missingFields": "Enter PLU, name, short name, unit and status.",
+      "csrf": "Could not prepare the secured form. Try again.",
+      "saveFailed": "Could not save the product."
+    },
+    "submit": "Save product",
+    "saving": "Saving…",
+    "cancel": "Cancel"
+  },
+  "routeNotFound": {
+    "listInvalid": "The product list link is empty or invalid. Open products from the menu.",
+    "editInvalid": "The edit product link is empty or invalid. Open a product from the list.",
+    "detailsInvalid": "The product link is empty or invalid. Open a product from the list.",
+    "eyebrow": "Not found",
+    "title": "Section unavailable",
+    "backToList": "Back to products"
+  },
+  "edit": {
+    "loading": "Loading the product for editing…",
+    "notFound": "Product not found."
+  }
+}

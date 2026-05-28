@@ -37,7 +37,17 @@
     "inactive": "Неактивен",
     "archived": "В архиве",
     "blocked": "Заблокирован",
-    "invited": "Приглашён"
+    "invited": "Приглашён",
+    "deleted": "Удалён",
+    "published": "Опубликована"
+  },
+  "pagination": {
+    "totalEmpty": "0 {{label}}",
+    "range": "{{first}}–{{last}} из {{total}} {{label}}",
+    "prev": "Назад",
+    "next": "Вперёд",
+    "pageSize": "На странице",
+    "defaultLabel": "записей"
   },
   "errors": {
     "pageNotFound": "Страница не найдена",

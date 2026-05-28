@@ -29,7 +29,32 @@
       "globalLogs": "Global logs",
       "usersAccess": "Users & access"
     },
-    "openStore": "Open store"
+    "openStore": "Open store",
+    "problemReasons": {
+      "latest_sync_error": "sync error",
+      "missing_sync": "no sync",
+      "outdated_catalog_version": "outdated catalog"
+    },
+    "problematicScale": {
+      "currentVersion": "Current version",
+      "expectedVersion": "Expected version",
+      "lastSync": "Last sync"
+    }
+  },
+  "accessDenied": {
+    "eyebrow": "Access denied",
+    "global-logs": {
+      "heading": "Global logs are available to administrators only",
+      "description": "Operators cannot open the global audit or synchronization logs. Contact an administrator if you need access."
+    },
+    "users-access": {
+      "heading": "Users & access are available to administrators only",
+      "description": "Operators cannot manage users. Contact an administrator if you need access to additional stores."
+    },
+    "store-management": {
+      "heading": "Store management is available to administrators only",
+      "description": "Operators cannot create or edit stores. Contact an administrator if a store needs to change."
+    }
   },
   "operator": {
     "eyebrow": "Operator panel",
@@ -45,6 +70,7 @@
       "loadingPanel": "Loading store panel…",
       "currentVersion": "Current version",
       "versionLoading": "Loading…",
+      "noVersion": "No published version",
       "publicationStatus": "Publication status",
       "publicationNone": "not published",
       "syncStatus": "Sync status",
