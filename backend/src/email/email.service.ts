@@ -3,16 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import type { AppConfiguration } from '../config/app.config';
 import { EMAIL_PROVIDER, EmailProvider } from './email.provider';
 
+export type EmailLocale = 'ru' | 'en';
+
 export type InviteEmailInput = {
   to: string;
   token: string;
   expiresAt: Date;
+  locale?: EmailLocale;
 };
 
 export type PasswordResetEmailInput = {
   to: string;
   token: string;
   expiresAt: Date;
+  locale?: EmailLocale;
 };
 
 export class EmailDeliveryError extends Error {
