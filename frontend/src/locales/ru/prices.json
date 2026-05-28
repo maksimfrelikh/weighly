@@ -1,1 +1,47 @@
-{}
+{
+  "tab": {
+    "eyebrow": "Цены",
+    "title": "Цены товаров магазина",
+    "description": "Товары из активного каталога этого магазина.",
+    "refresh": "Обновить цены",
+    "refreshing": "Обновляем…",
+    "loading": "Загружаем цены активного каталога…",
+    "emptyFiltered": "По этим фильтрам товаров нет.",
+    "paginationLabel": "товаров"
+  },
+  "filters": {
+    "search": "Поиск",
+    "searchPlaceholder": "Название, короткое название, PLU, SKU или штрихкод",
+    "category": "Категория",
+    "categoryAll": "Все категории",
+    "priceStatus": "Статус цены",
+    "priceStatusAll": "Все товары",
+    "priceStatusMissing": "Только без цены",
+    "priceStatusPriced": "Только с ценой"
+  },
+  "columns": {
+    "product": "Товар",
+    "shortName": "Короткое название",
+    "plu": "PLU",
+    "skuBarcode": "SKU/штрихкод",
+    "category": "Категория",
+    "currentPrice": "Текущая цена",
+    "unit": "Ед.",
+    "status": "Статус",
+    "updatedAt": "Обновлена"
+  },
+  "row": {
+    "noPrice": "Нет цены",
+    "invalidPrice": "Некорректная цена",
+    "pricePlaceholder": "0.00",
+    "priceAriaLabel": "Цена для {{name}}",
+    "currencyAriaLabel": "Валюта для {{name}}",
+    "save": "Сохранить",
+    "saving": "Сохраняем…"
+  },
+  "errors": {
+    "priceMustBePositive": "Введите цену больше 0.",
+    "csrf": "Не удалось подготовить защищённую форму. Повторите попытку.",
+    "saveFailed": "Не удалось сохранить цену."
+  }
+}

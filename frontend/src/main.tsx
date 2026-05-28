@@ -2443,6 +2443,7 @@ function IssueList({ title, issues, emptyText, tone }: { title: string; issues: 
 }
 
 function PricesTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation('prices');
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [missingPrice, setMissingPrice] = useState<'all' | 'missing' | 'priced'>('all');
@@ -2483,66 +2484,66 @@ function PricesTab({ storeId }: { storeId: string }) {
     <section className="prices-tab" aria-labelledby="prices-title">
       <div className="panel-heading prices-heading">
         <div>
-          <p className="eyebrow">Цены</p>
-          <h3 id="prices-title">Цены товаров магазина</h3>
-          <p className="muted">Товары из активного каталога этого магазина.</p>
+          <p className="eyebrow">{t('tab.eyebrow')}</p>
+          <h3 id="prices-title">{t('tab.title')}</h3>
+          <p className="muted">{t('tab.description')}</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Обновляем...' : 'Обновить цены'}
+          {isFetching ? t('tab.refreshing') : t('tab.refresh')}
         </button>
       </div>
 
       <div className="price-filters">
         <label>
-          Поиск
+          {t('filters.search')}
           <input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Название, короткое название, PLU, SKU или штрихкод"
+            placeholder={t('filters.searchPlaceholder')}
           />
         </label>
         <label>
-          Категория
+          {t('filters.category')}
           <select value={categoryId} onChange={(event) => handleCategoryChange(event.target.value)}>
-            <option value="">Все категории</option>
+            <option value="">{t('filters.categoryAll')}</option>
             {categoryOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
         </label>
         <label>
-          Статус цены
+          {t('filters.priceStatus')}
           <select
             value={missingPrice}
             onChange={(event) => handleMissingPriceChange(event.target.value as 'all' | 'missing' | 'priced')}
           >
-            <option value="all">Все товары</option>
-            <option value="missing">Только без цены</option>
-            <option value="priced">Только с ценой</option>
+            <option value="all">{t('filters.priceStatusAll')}</option>
+            <option value="missing">{t('filters.priceStatusMissing')}</option>
+            <option value="priced">{t('filters.priceStatusPriced')}</option>
           </select>
         </label>
       </div>
 
-      {isLoading && <div className="status status-loading">Загружаем цены активного каталога...</div>}
+      {isLoading && <div className="status status-loading">{t('tab.loading')}</div>}
       {errorMessage && <div className="form-error" role="alert">{errorMessage}</div>}
-      {!isLoading && !errorMessage && prices.length === 0 && <div className="empty-state">По этим фильтрам товаров нет.</div>}
+      {!isLoading && !errorMessage && prices.length === 0 && <div className="empty-state">{t('tab.emptyFiltered')}</div>}
 
-      <Pagination meta={pricesMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label="товаров" />
+      <Pagination meta={pricesMeta} onOffsetChange={setOffset} onLimitChange={handleLimitChange} label={t('tab.paginationLabel')} />
 
       {prices.length > 0 && (
         <div className="price-table-wrap">
           <table className="price-table">
             <thead>
               <tr>
-                <th>Товар</th>
-                <th>Короткое название</th>
-                <th>PLU</th>
-                <th>SKU/штрихкод</th>
-                <th>Категория</th>
-                <th>Текущая цена</th>
-                <th>Ед.</th>
-                <th>Статус</th>
-                <th>Обновлена</th>
+                <th>{t('columns.product')}</th>
+                <th>{t('columns.shortName')}</th>
+                <th>{t('columns.plu')}</th>
+                <th>{t('columns.skuBarcode')}</th>
+                <th>{t('columns.category')}</th>
+                <th>{t('columns.currentPrice')}</th>
+                <th>{t('columns.unit')}</th>
+                <th>{t('columns.status')}</th>
+                <th>{t('columns.updatedAt')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2558,6 +2559,7 @@ function PricesTab({ storeId }: { storeId: string }) {
 }
 
 function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
+  const { t } = useTranslation('prices');
   const currentPriceValue = row.currentPrice?.price ?? '';
   const savedCurrency = row.currentPrice?.currency;
   const initialCurrency: AllowedCurrency = (ALLOWED_CURRENCIES as readonly string[]).includes(savedCurrency ?? '')
@@ -2585,13 +2587,13 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     setRowError(null);
 
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      setRowError('Введите цену больше 0.');
+      setRowError(t('errors.priceMustBePositive'));
       return;
     }
 
     const csrfData = csrf ?? (await refetchCsrf()).data;
     if (!csrfData) {
-      setRowError('Не удалось подготовить защищённую форму. Повторите попытку.');
+      setRowError(t('errors.csrf'));
       return;
     }
 
@@ -2608,7 +2610,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error
         ? String(error.message)
-        : 'Не удалось сохранить цену.';
+        : t('errors.saveFailed');
       setRowError(message);
     }
   }
@@ -2617,8 +2619,8 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
     <tr className={rowClassName}>
       <td>
         <strong>{row.product.name}</strong>
-        {row.missingPrice && <span className="price-warning">Нет цены</span>}
-        {(hasInvalidPrice || hasInvalidSavedPrice) && <span className="price-warning">Некорректная цена</span>}
+        {row.missingPrice && <span className="price-warning">{t('row.noPrice')}</span>}
+        {(hasInvalidPrice || hasInvalidSavedPrice) && <span className="price-warning">{t('row.invalidPrice')}</span>}
       </td>
       <td>{row.product.shortName}</td>
       <td>{row.product.defaultPluCode}</td>
@@ -2627,17 +2629,17 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
       <td>
         <form className="inline-price-form" onSubmit={handleSubmit}>
           <input
-            aria-label={`Цена для ${row.product.name}`}
+            aria-label={t('row.priceAriaLabel', { name: row.product.name })}
             inputMode="decimal"
             min="0.01"
             onChange={(event) => setPriceValue(event.target.value)}
-            placeholder="0.00"
+            placeholder={t('row.pricePlaceholder')}
             step="0.01"
             type="number"
             value={priceValue}
           />
           <select
-            aria-label={`Валюта для ${row.product.name}`}
+            aria-label={t('row.currencyAriaLabel', { name: row.product.name })}
             disabled={currencyLocked}
             onChange={(event) => setCurrency(event.target.value as AllowedCurrency)}
             value={currency}
@@ -2647,7 +2649,7 @@ function PriceTableRow({ row, storeId }: { row: PriceRow; storeId: string }) {
             ))}
           </select>
           <button type="submit" disabled={isLoading || hasInvalidPrice || !isDirty}>
-            {isLoading ? 'Сохраняем...' : 'Сохранить'}
+            {isLoading ? t('row.saving') : t('row.save')}
           </button>
         </form>
         {rowError && <div className="inline-error" role="alert">{rowError}</div>}
