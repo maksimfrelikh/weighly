@@ -488,10 +488,6 @@ function passwordResetRequestErrorMessage(error: unknown) {
     return i18n.t('passwordResetRequest.errors.fallback', { ns: 'auth' });
   }
 
-  if (error.status === 400 && error.message.toLowerCase().includes('email')) {
-    return i18n.t('passwordResetRequest.errors.invalidEmail', { ns: 'auth' });
-  }
-
   return error.message;
 }
 
