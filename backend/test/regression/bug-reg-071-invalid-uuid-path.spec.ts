@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BadRequestException } from '@nestjs/common';
 
-import { RussianParseUUIDPipe } from '../../src/shared/uuid-param.pipe.ts';
+// RussianParseUUIDPipe is now @Injectable() with a DI'd I18nService — node's
+// TypeScript strip-only runner cannot parse decorators, so import the compiled
+// class from dist/. Run `npm run build` before this spec.
+import { RussianParseUUIDPipe } from '../../dist/shared/uuid-param.pipe.js';
 
 // BUG-REG-071 — non-UUID `:id` / `:storeId` / `:productId` etc. path params
 // fell through Prisma's value parser to Nest's default 500 "Internal server
@@ -11,8 +14,10 @@ import { RussianParseUUIDPipe } from '../../src/shared/uuid-param.pipe.ts';
 // 400 before service code runs. These specs pin the pipe contract.
 describe('BUG-REG-071 — RussianParseUUIDPipe rejects non-UUID, accepts v4', () => {
   const meta = { type: 'param' as const, metatype: String, data: 'storeId' };
+  const i18nStub = { t: (key: string) => key } as never;
+  const pipe = new RussianParseUUIDPipe(i18nStub);
 
-  describe('rejects non-UUID input with BadRequestException("Некорректный идентификатор")', () => {
+  describe('rejects non-UUID input with BadRequestException("errors.common.invalidId")', () => {
     const REJECT_CASES = [
       'not-a-uuid',
       'not-uuid',
@@ -32,7 +37,7 @@ describe('BUG-REG-071 — RussianParseUUIDPipe rejects non-UUID, accepts v4', ()
     for (const value of REJECT_CASES) {
       it(`rejects ${JSON.stringify(value)}`, async () => {
         await assert.rejects(
-          () => RussianParseUUIDPipe.transform(value, meta),
+          () => pipe.transform(value, meta),
           (err: unknown) => {
             assert.ok(err instanceof BadRequestException, `expected BadRequestException, got ${err}`);
             assert.equal((err as BadRequestException).getStatus(), 400);
@@ -43,7 +48,7 @@ describe('BUG-REG-071 — RussianParseUUIDPipe rejects non-UUID, accepts v4', ()
               error?: string;
               statusCode?: number;
             };
-            assert.equal(body.message, 'Некорректный идентификатор');
+            assert.equal(body.message, 'errors.common.invalidId');
             assert.equal(body.error, 'Bad Request');
             assert.equal(body.statusCode, 400);
             return true;
@@ -63,7 +68,7 @@ describe('BUG-REG-071 — RussianParseUUIDPipe rejects non-UUID, accepts v4', ()
 
     for (const value of ACCEPT_CASES) {
       it(`accepts ${value}`, async () => {
-        const result = await RussianParseUUIDPipe.transform(value, meta);
+        const result = await pipe.transform(value, meta);
         assert.equal(result, value);
       });
     }
