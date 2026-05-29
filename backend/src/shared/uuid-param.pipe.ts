@@ -1,4 +1,5 @@
-import { BadRequestException, ParseUUIDPipe } from '@nestjs/common';
+import { BadRequestException, Injectable, ParseUUIDPipe } from '@nestjs/common';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 
 // Shared ParseUUIDPipe instance for UUID path params (:storeId, :userId,
 // :productId, :catalogVersionId, :bannerId, :id and friends). Prevents
@@ -7,7 +8,16 @@ import { BadRequestException, ParseUUIDPipe } from '@nestjs/common';
 // server error" (BUG-REG-071) and likewise blocks bogus-UUID input from
 // reaching service code that would otherwise raise a Prisma error
 // (BUG-REG-069 family). All schema IDs are v4 (`@default(uuid())`).
-export const RussianParseUUIDPipe = new ParseUUIDPipe({
-  version: '4',
-  exceptionFactory: () => new BadRequestException('Некорректный идентификатор'),
-});
+@Injectable()
+export class RussianParseUUIDPipe extends ParseUUIDPipe {
+  constructor(private readonly i18n: I18nService) {
+    super({ version: '4' });
+    this.exceptionFactory = () => {
+      // ParseUUIDPipe's exceptionFactory has no DI hook; read the request lang via I18nContext when available, else force RU for callers outside the request lifecycle.
+      const ctx = I18nContext.current();
+      return new BadRequestException(
+        ctx ? ctx.t('errors.common.invalidId') : this.i18n.t('errors.common.invalidId', { lang: 'ru' }),
+      );
+    };
+  }
+}
