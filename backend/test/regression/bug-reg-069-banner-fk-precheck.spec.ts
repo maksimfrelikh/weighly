@@ -12,6 +12,11 @@ import { AdvertisingService } from '../../dist/advertising/advertising.service.j
 // generic 500 "Internal server error". FIX 1 (FK precheck half) calls
 // prisma.fileAsset.findUnique() in advertising.service before the write and
 // throws BadRequestException(code=FILE_ASSET_NOT_FOUND) when missing.
+// AdvertisingService.findBanner / FK precheck call this.i18n.t(...) eagerly, so
+// every instantiation needs an i18n stub. Stub returns the key — assertions
+// compare keys, not RU literals (those moved to backend/src/i18n/ru/errors.json).
+const i18nStub = { t: (key: string) => key } as never;
+
 const ACTOR_ID = '00000000-0000-4000-8000-000000000099';
 const STORE_ID = '11111111-1111-4111-8111-111111111111';
 const REAL_FILE = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -94,7 +99,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
   describe('createBanner', () => {
     it('rejects bogus imageFileAssetId with 400 FILE_ASSET_NOT_FOUND and does NOT touch the DB write path', async () => {
       const { prisma, state } = createMockPrisma([{ id: REAL_FILE }]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       await assert.rejects(
         () =>
@@ -111,7 +116,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
           assert.ok(err instanceof BadRequestException, `expected BadRequestException, got ${err}`);
           const body = (err as BadRequestException).getResponse() as { code?: string; message?: string };
           assert.equal(body.code, 'FILE_ASSET_NOT_FOUND');
-          assert.match(body.message ?? '', /imageFileAssetId.*отсутствующий файл/);
+          assert.equal(body.message, 'errors.advertising.fileAssetNotFound');
           return true;
         },
       );
@@ -125,7 +130,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
 
     it('accepts a valid imageFileAssetId (FK present) and creates the banner', async () => {
       const { prisma, state } = createMockPrisma([{ id: REAL_FILE }]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       const { banner } = await service.createBanner(
         STORE_ID,
@@ -146,7 +151,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
 
     it('skips the FK precheck when imageFileAssetId is omitted (no DB lookup)', async () => {
       const { prisma, state } = createMockPrisma([]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       const { banner } = await service.createBanner(
         STORE_ID,
@@ -164,7 +169,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
   describe('updateBanner (parity with createBanner)', () => {
     it('rejects bogus imageFileAssetId with 400 FILE_ASSET_NOT_FOUND on update too', async () => {
       const { prisma, state } = createMockPrisma([{ id: REAL_FILE }]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       // Seed an existing banner so findBanner() (which runs before precheck) succeeds.
       const created = await service.createBanner(
@@ -201,7 +206,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
 
     it('does NOT run the FK precheck when imageFileAssetId is not part of the update payload', async () => {
       const { prisma, state } = createMockPrisma([{ id: REAL_FILE }]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       const created = await service.createBanner(
         STORE_ID,
@@ -225,7 +230,7 @@ describe('BUG-REG-069 — advertising banner imageFileAssetId FK precheck', () =
 
     it('clearing imageFileAssetId to null skips the FK lookup', async () => {
       const { prisma, state } = createMockPrisma([{ id: REAL_FILE }]);
-      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any);
+      const service = new AdvertisingService(prisma as any, makeAuditLogs() as any, i18nStub);
 
       const created = await service.createBanner(
         STORE_ID,

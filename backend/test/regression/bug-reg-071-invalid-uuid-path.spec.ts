@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BadRequestException } from '@nestjs/common';
 
-import { RussianParseUUIDPipe } from '../../src/shared/uuid-param.pipe.ts';
+// RussianParseUUIDPipe is now @Injectable() with a DI'd I18nService — node's
+// TypeScript strip-only runner cannot parse decorators, so import the compiled
+// class from dist/. Run `npm run build` before this spec.
+import { RussianParseUUIDPipe } from '../../dist/shared/uuid-param.pipe.js';
 
 // BUG-REG-071 — non-UUID `:id` / `:storeId` / `:productId` etc. path params
 // fell through Prisma's value parser to Nest's default 500 "Internal server
