@@ -34,6 +34,8 @@ function buildPrismaStub(state: {
   return { prisma, calls };
 }
 
+const i18nStub = { t: (key: string) => key } as never;
+
 describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
   const storeId = '11111111-1111-4111-8111-111111111111';
   const catalogId = '22222222-2222-4222-8222-222222222222';
@@ -47,7 +49,7 @@ describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
         { id: 'c3', name: 'Cherries', shortName: 'che', status: 'active' },
       ],
     });
-    const service = new PricesService(prisma);
+    const service = new PricesService(prisma, undefined, i18nStub);
 
     const result = await service.listStorePriceCategories(storeId);
 
@@ -88,13 +90,13 @@ describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
 
   it('throws NotFoundException when the store has no active catalog (auth-equivalent boundary on missing resource)', async () => {
     const { prisma } = buildPrismaStub({ catalog: null, categories: [] });
-    const service = new PricesService(prisma);
+    const service = new PricesService(prisma, undefined, i18nStub);
 
     await assert.rejects(
       () => service.listStorePriceCategories(storeId),
       (error: Error) => {
         assert.equal(error.name, 'NotFoundException');
-        assert.match(error.message, /Активный каталог магазина не найден/);
+        assert.match(error.message, /errors\.catalog\.activeCatalogNotFound/);
         return true;
       },
     );
@@ -102,13 +104,13 @@ describe('PricesService.listStorePriceCategories — BUG-REG-060', () => {
 
   it('rejects empty storeId via the shared findActiveCatalog normaliser (input boundary)', async () => {
     const { prisma } = buildPrismaStub({ catalog: null, categories: [] });
-    const service = new PricesService(prisma);
+    const service = new PricesService(prisma, undefined, i18nStub);
 
     await assert.rejects(
       () => service.listStorePriceCategories(''),
       (error: Error) => {
         assert.equal(error.name, 'BadRequestException');
-        assert.match(error.message, /ID магазина обязателен/);
+        assert.match(error.message, /errors\.stores\.storeIdRequired/);
         return true;
       },
     );

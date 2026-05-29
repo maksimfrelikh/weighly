@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PriceStatus, Prisma } from '@prisma/client';
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
 import { ALLOWED_CURRENCIES, AllowedCurrency } from '../shared/currency';
@@ -47,6 +48,7 @@ export class PricesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogs: AuditLogService,
+    private readonly i18n: I18nService,
   ) {}
 
   async listStorePriceCategories(storeId: string) {
@@ -183,7 +185,7 @@ export class PricesService {
     context: RequestContext,
   ) {
     const catalog = await this.findActiveCatalog(storeId);
-    const productId = this.normalizeRequiredId(input.productId, 'ID товара обязателен');
+    const productId = this.normalizeRequiredId(input.productId, this.i18n.t('errors.catalog.productIdRequired'));
     const price = this.requirePrice(input.price);
     const currency = this.requireCurrency(input.currency ?? 'RUB');
 
@@ -237,7 +239,7 @@ export class PricesService {
   }
 
   private async findActiveCatalog(storeId: string): Promise<ActiveCatalogRecord> {
-    const normalizedStoreId = this.normalizeRequiredId(storeId, 'ID магазина обязателен');
+    const normalizedStoreId = this.normalizeRequiredId(storeId, this.i18n.t('errors.stores.storeIdRequired'));
     const catalog = await this.prisma.storeCatalog.findFirst({
       where: { storeId: normalizedStoreId, status: 'active' },
       orderBy: { createdAt: 'asc' },
@@ -245,7 +247,7 @@ export class PricesService {
     });
 
     if (!catalog) {
-      throw new NotFoundException('Активный каталог магазина не найден');
+      throw new NotFoundException(this.i18n.t('errors.catalog.activeCatalogNotFound'));
     }
 
     return catalog;
@@ -257,7 +259,7 @@ export class PricesService {
       select: { id: true, status: true },
     });
     if (!category || category.status !== 'active') {
-      throw new BadRequestException('Активная категория не найдена в активном каталоге');
+      throw new BadRequestException(this.i18n.t('errors.prices.activeCategoryNotFound'));
     }
   }
 
@@ -274,14 +276,14 @@ export class PricesService {
     });
 
     if (!placement) {
-      throw new BadRequestException('Перед назначением цены товар должен быть активен и размещён в активном каталоге');
+      throw new BadRequestException(this.i18n.t('errors.prices.productMustBeActiveAndPlaced'));
     }
   }
 
   private requirePrice(price: number): Prisma.Decimal {
     const value = typeof price === 'number' ? price : Number(price);
     if (!Number.isFinite(value) || value <= 0) {
-      throw new BadRequestException('Цена должна быть больше 0');
+      throw new BadRequestException(this.i18n.t('errors.prices.priceMustBeGreaterThanZero'));
     }
 
     return new Prisma.Decimal(value.toFixed(2));
@@ -291,7 +293,7 @@ export class PricesService {
     const normalized = typeof currency === 'string' ? currency.trim().toUpperCase() : '';
     if (!ALLOWED_CURRENCIES.includes(normalized as AllowedCurrency)) {
       throw new BadRequestException({
-        message: 'Валюта не поддерживается',
+        message: this.i18n.t('errors.prices.currencyNotSupported'),
         code: 'PRICE_CURRENCY_NOT_SUPPORTED',
         allowedCurrencies: ALLOWED_CURRENCIES,
         received: normalized || null,
@@ -313,7 +315,7 @@ export class PricesService {
       return false;
     }
 
-    throw new BadRequestException(`${fieldName} должно быть true или false`);
+    throw new BadRequestException(this.i18n.t('errors.prices.fieldMustBeBoolean', { args: { field: fieldName } }));
   }
 
   private normalizeOptionalString(value: string | undefined): string | undefined {
