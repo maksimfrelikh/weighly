@@ -61,10 +61,23 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
     container_name: scale-admin-frontend
     restart: unless-stopped
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
+    # environment: здесь БЫЛ VITE_API_BASE_URL — убран 21.09.2026 как вводящий в
+    # заблуждение. Vite подставляет VITE_* на этапе сборки, в рантайме переменная
+    # не читается никем. Настоящее место — build.args выше; смена адреса API
+    # требует пересборки образа, а не перезапуска контейнера.
     ports:
-      - "127.0.0.1:5173:5173"
+      # Наружу по-прежнему 5173, чтобы не трогать sites-available/weighly на
+      # хосте; внутри теперь nginx на 80, а не vite preview на 5173.
+      - "127.0.0.1:5173:80"
+    # Healthcheck появился вместе с переездом на nginx: раньше контейнер его не
+    # определял, и health.sh мог утверждать только «процесс жив». Теперь
+    # проверяется, что статика действительно отдаётся.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     depends_on:
       - backend
 
