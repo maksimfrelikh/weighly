@@ -4,7 +4,12 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-PROJECT="scale-admin"
+# The compose project name decides which volumes and network the stack uses. The running
+# production stack was created with a plain `docker compose up` in this directory, so its
+# project is the directory name (`weighly` on laptop-server) and its data lives in
+# `weighly_postgres_data`. A hard-coded "scale-admin" here created a second, EMPTY set of
+# volumes and then failed on the container names (2026-10-01). Match compose's own default.
+PROJECT="${COMPOSE_PROJECT_NAME:-$(basename "$PWD")}"
 COMPOSE_FILES=(-f docker-compose.yml)
 ENV_FILE=(--env-file .env)
 BACKUP_DIR="$HOME/backups/scale-admin"

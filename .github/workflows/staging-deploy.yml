@@ -1,8 +1,8 @@
 name: Deploy staging
 
+# Manual only: there is no staging host behind the STAGING_SSH_* secrets any more (the old VPS
+# with the `clawd` user is gone), and on `push` this job failed on every commit since 2026-09-21.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
