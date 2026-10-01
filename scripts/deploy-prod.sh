@@ -18,7 +18,7 @@ case "$ACTION" in
     echo "Local main:   $(git log --oneline -1)"
     git fetch origin main >/dev/null 2>&1
     echo "Origin main:  $(git log origin/main --oneline -1)"
-    UNCOMMITTED=$(git status --porcelain | wc -l)
+    UNCOMMITTED=$(git status --porcelain --untracked-files=no | wc -l)
     echo "Working tree: $UNCOMMITTED uncommitted changes"
     echo "Branch:       $(git rev-parse --abbrev-ref HEAD)"
     echo ""
@@ -52,9 +52,9 @@ case "$ACTION" in
     echo ""
 
     # 1. Preflight: working tree clean
-    if [ -n "$(git status --porcelain)" ]; then
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
       echo "[deploy-prod] ERROR: working tree has uncommitted changes."
-      git status --short
+      git status --short --untracked-files=no
       exit 1
     fi
 
