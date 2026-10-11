@@ -9,6 +9,7 @@ import { MetricsService } from './metrics.service';
 })
 export class MetricsModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(MetricsMiddleware).forRoutes('*');
+    // Express 5 (NestJS 11+) spells "every path" as {*path}; a bare '*' is only auto-converted with a warning.
+    consumer.apply(MetricsMiddleware).forRoutes('{*path}');
   }
 }
