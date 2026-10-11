@@ -1,7 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
+// The client is generated into src/generated and compiled with the app: build before seeding.
+const { PrismaClient } = require('../dist/generated/prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { pbkdf2Sync, randomBytes, timingSafeEqual } = require('node:crypto');
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const PASSWORD_HASH_ALGORITHM = 'pbkdf2_sha512';
 const PASSWORD_HASH_ITERATIONS = 210_000;

@@ -4,7 +4,8 @@
 
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../../dist/generated/prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { StoresService } = require('../../dist/stores/stores.service');
 const { CatalogService } = require('../../dist/catalog/catalog.service');
 const { ProductsService } = require('../../dist/products/products.service');
@@ -16,7 +17,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(2);
 }
 
-const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const auditLogs = new AuditLogService(prisma);
 const cascadeArchive = new CascadeArchiveService(auditLogs);

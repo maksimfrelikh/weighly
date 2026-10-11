@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ConflictException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../src/generated/prisma/client';
 
 // CatalogPublishingService is @Injectable() with parameter properties — node's
 // strip-only runner cannot parse it, so we import the compiled class from

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CategoryStatus, PlacementStatus, Prisma, ProductStatus } from '@prisma/client';
+import { CategoryStatus, PlacementStatus, Prisma, ProductStatus } from '../generated/prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';

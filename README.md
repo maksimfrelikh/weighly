@@ -65,9 +65,11 @@ backend/.env.example
 
 Required local .env files are not committed.
 
-After migrations, seed the first local admin and sample manual-test data:
+After migrations, seed the first local admin and sample manual-test data (the seed loads the Prisma
+client compiled into `dist/`, so build first):
 
 cd backend
+npm run build
 npm run prisma:seed
 
 Default local seed values from backend/.env.example:

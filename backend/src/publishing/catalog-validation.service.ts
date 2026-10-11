@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { BannerStatus, CategoryStatus, PlacementStatus, Prisma, ProductStatus } from '@prisma/client';
+import { BannerStatus, CategoryStatus, PlacementStatus, Prisma, ProductStatus } from '../generated/prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { ALLOWED_CURRENCIES, AllowedCurrency } from '../shared/currency';

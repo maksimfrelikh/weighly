@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, ScaleSyncStatus } from '@prisma/client';
+import { Prisma, ScaleSyncStatus } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildMeta, parseLimit, parseOffset, type PaginationMeta } from '../shared/pagination';
 

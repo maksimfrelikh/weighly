@@ -6,13 +6,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../../dist/generated/prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL must be set');
   process.exit(2);
 }
-const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function cleanDb() {
   await prisma.auditLog.deleteMany({});

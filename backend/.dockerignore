@@ -1,3 +1,5 @@
 node_modules
 dist
 npm-debug.log
+# a host build's incremental state would make tsc in the image emit nothing (seen 2026-10-11)
+*.tsbuildinfo

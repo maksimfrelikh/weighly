@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
