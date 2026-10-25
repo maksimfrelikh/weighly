@@ -16,7 +16,7 @@ services:
     expose:
       - "5432"
     volumes: !override
-      - staging_postgres_data:/var/lib/postgresql/data
+      - staging_postgres_data_18:/var/lib/postgresql
     deploy:
       resources:
         limits:
@@ -58,5 +58,5 @@ services:
           memory: 128M
 
 volumes:
-  staging_postgres_data:
+  staging_postgres_data_18:
   staging_uploads:

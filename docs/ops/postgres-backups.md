@@ -81,13 +81,13 @@ Run restore smoke against an existing dump:
 ```
 
 The restore target is always a temporary Docker container using
-`postgres:16-alpine` by default. It has no published ports and is removed on
+`postgres:18-alpine` by default. It has no published ports and is removed on
 success or failure.
 
 Optional overrides:
 
 ```bash
-RESTORE_SMOKE_IMAGE=postgres:16-alpine
+RESTORE_SMOKE_IMAGE=postgres:18-alpine
 RESTORE_SMOKE_DB=restore_smoke
 RESTORE_SMOKE_USER=restore_smoke
 KEEP_RESTORE_SMOKE=1

@@ -23,7 +23,7 @@ Usage:
   ./scripts/restore-postgres-smoke.sh <backup.dump>
 
 Environment:
-  RESTORE_SMOKE_IMAGE=postgres:16-alpine  Docker image for the disposable DB
+  RESTORE_SMOKE_IMAGE=postgres:18-alpine  Docker image for the disposable DB
   RESTORE_SMOKE_DB=restore_smoke          Disposable DB name
   RESTORE_SMOKE_USER=restore_smoke        Disposable DB user
   KEEP_RESTORE_SMOKE=1                    Keep the temp container for inspection
@@ -74,7 +74,7 @@ backup_file="$1"
 
 backup_file="$(readlink -f "$backup_file")"
 
-RESTORE_SMOKE_IMAGE="${RESTORE_SMOKE_IMAGE:-postgres:16-alpine}"
+RESTORE_SMOKE_IMAGE="${RESTORE_SMOKE_IMAGE:-postgres:18-alpine}"
 RESTORE_SMOKE_DB="${RESTORE_SMOKE_DB:-restore_smoke}"
 RESTORE_SMOKE_USER="${RESTORE_SMOKE_USER:-restore_smoke}"
 RESTORE_SMOKE_PASSWORD="${RESTORE_SMOKE_PASSWORD:-$(random_password)}"

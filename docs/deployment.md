@@ -6,7 +6,7 @@ These notes describe the minimum production-oriented deployment posture for the 
 
 The canonical `docker-compose.yml` defines:
 
-- `postgres` with the `postgres_data` volume mounted at `/var/lib/postgresql/data`.
+- `postgres` (`postgres:18-alpine`) with the `postgres_data_18` volume mounted at `/var/lib/postgresql` (18+ keeps PGDATA under `<major>/docker` inside it). The pre-18 cluster is left behind in the old `postgres_data` volume: the move was a `pg_dump` → fresh 18 cluster → `psql` restore, and that volume can be removed once the new one has been trusted for a while.
 - `backend` with `FILE_UPLOAD_DIR=/app/uploads`.
 - `frontend` with `VITE_API_BASE_URL` pointing at the backend API origin.
 - `scale_admin_uploads` mounted into the backend at `/app/uploads` for uploaded files.
