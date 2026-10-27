@@ -11,8 +11,8 @@ import { I18nContext, I18nService } from 'nestjs-i18n';
 @Injectable()
 export class RussianParseUUIDPipe extends ParseUUIDPipe {
   // Plain field + assignment (no constructor parameter property) so the
-  // file parses under `node --test --experimental-strip-types`, which the
-  // CI uses to run *.spec.ts directly without a TS transform step.
+  // file parses under `node --test` with Node's built-in type stripping, which
+  // the CI uses to run *.spec.ts directly without a TS transform step.
   private readonly i18n: I18nService;
   constructor(i18n: I18nService) {
     super({ version: '4' });
