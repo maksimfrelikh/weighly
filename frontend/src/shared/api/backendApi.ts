@@ -235,6 +235,13 @@ export function setLocaleHeader(headers: Headers): Headers {
   return headers;
 }
 
+// Absolute URL of a path the backend serves itself, such as FileAsset.publicUrl
+// (/uploads/images/<file>). Resolved against the base of the API calls, which is
+// the page's own origin when VITE_API_BASE_URL is empty, as in prod.
+export function resolveBackendUrl(path: string): string {
+  return new URL(path, new URL(backendBaseUrl, window.location.href)).href;
+}
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: `${backendBaseUrl}/api`,
   credentials: 'include',

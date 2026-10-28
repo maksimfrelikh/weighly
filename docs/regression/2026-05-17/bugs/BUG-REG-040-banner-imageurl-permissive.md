@@ -1,6 +1,6 @@
 # BUG-REG-040: Advertising banner `imageUrl` validation accepts arbitrary strings (incl. `javascript:` URI and plain garbage)
 
-- **Status:** OPEN
+- **Status:** FIXED в main — `4497f57` (2026-05-19, PR #16), правило закреплено `backend/src/advertising/advertising.service.spec.ts`. Загрузка баннера из UI после этого фикса падала с 400: [BUG-REG-072](../../2026-10-28/bugs/BUG-REG-072-banner-upload-relative-image-url.md).
 - **Severity:** medium (defense-in-depth gap; not directly exploitable as XSS in modern browsers, but pollutes data + may leak to scales via publishing)
 - **Area:** advertising / banners / validation
 - **Role:** admin

@@ -1,7 +1,7 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import i18n from '../../i18n';
-import { normalizeError, setLocaleHeader } from './backendApi';
+import { normalizeError, resolveBackendUrl, setLocaleHeader } from './backendApi';
 
 describe('setLocaleHeader — X-Locale derived from i18n.resolvedLanguage', () => {
   beforeEach(async () => {
@@ -98,5 +98,35 @@ describe('normalizeError — backend localized message passthrough for 401/403/4
     });
     expect(result.status).toBe(500);
     expect(result.message).toBe('Сервер вернул HTTP 500');
+  });
+});
+
+describe('resolveBackendUrl — banner imageUrl from an image upload (BUG-REG-072)', () => {
+  // POST /api/files/images answers with a root-relative FileAsset.publicUrl. The banner
+  // API takes only an absolute http(s) URL (BUG-REG-040): the scales get it from the
+  // published package as is. Sending publicUrl itself ended in a 400.
+  const publicUrl = '/uploads/images/3f1c9a52-8a4e-4c1b-9d0e-6b2f7c3a1e44.png';
+
+  it('turns an upload path into an absolute http(s) URL on the page origin', () => {
+    const resolved = new URL(resolveBackendUrl(publicUrl));
+    expect(['http:', 'https:']).toContain(resolved.protocol);
+    // img-src 'self' in frontend/nginx.conf: the admin preview must stay on the page origin.
+    expect(resolved.origin).toBe(window.location.origin);
+    expect(resolved.pathname).toBe(publicUrl);
+  });
+
+  it('leaves an absolute URL as it is', () => {
+    expect(resolveBackendUrl('https://cdn.example.com/banner.webp')).toBe('https://cdn.example.com/banner.webp');
+  });
+
+  it('resolves against VITE_API_BASE_URL when the API lives on another origin', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test');
+    vi.resetModules();
+    try {
+      const { resolveBackendUrl: resolveAgainstApiBase } = await import('./backendApi');
+      expect(resolveAgainstApiBase(publicUrl)).toBe(`https://api.example.test${publicUrl}`);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

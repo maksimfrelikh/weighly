@@ -9,6 +9,7 @@ import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import {
   backendApi,
   clearProtectedClientState,
+  resolveBackendUrl,
   subscribeAuthSessionEvents,
   subscribeStoreListChangedEvents,
   type ApiError,
@@ -1182,7 +1183,9 @@ function AdvertisingTab({ storeId }: { storeId: string }) {
       }).unwrap();
       await createBanner({
         storeId,
-        imageUrl: uploadResponse.fileAsset.publicUrl,
+        // The banner API takes only an absolute http(s) URL, and the scales get it
+        // from the published package as is (BUG-REG-040, BUG-REG-072).
+        imageUrl: resolveBackendUrl(uploadResponse.fileAsset.publicUrl),
         imageFileAssetId: uploadResponse.fileAsset.id,
         status: newStatus,
         sortOrder: bannersMeta.total,
