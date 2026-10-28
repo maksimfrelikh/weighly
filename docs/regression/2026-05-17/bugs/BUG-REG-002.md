@@ -1,5 +1,28 @@
 # BUG-REG-002: Дополнительные security headers отсутствуют (X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy, Permissions-Policy)
 
+## Status: FIXED в main (2026-10-28), на проде — после деплоя
+
+Заголовки ставят два nginx, и делят их так:
+
+- `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+  (и HSTS из [BUG-REG-001](BUG-REG-001.md)) — nginx хоста, `sites-available/weighly`, на всех ответах,
+  включая `/api/*`. Проверено curl 2026-10-28: есть на https://weighly.frelikh.dev/ и на `/api/health`.
+- `Content-Security-Policy` и `Permissions-Policy` — nginx контейнера фронтенда, `frontend/nginx.conf`,
+  `location = /index.html` (через него идёт любой HTML-ответ SPA). Сама политика и почему каждая
+  директива такая — в комментарии там же.
+
+Проверено 2026-10-28 Docker-smoke'ом: postgres 18 + образы backend и frontend из main + nginx с TLS
+вместо хостового. В Chromium 156, Firefox 157 и WebKit 27.2 (Playwright 1.64.1) пройдены логин, обзор,
+магазины, карточка магазина (каталог, баннеры, весы, цены, публикации, журналы), создание магазина и
+товара с загрузкой картинки, пользователи, общие журналы, смена языка, выход — ни одного нарушения CSP
+и ни одного предупреждения о Permissions-Policy в консоли; загруженные картинки (`/uploads/images/…`)
+отрисованы. Единственное, что пишет WebKit 27.2, — `style-src-attr` с пустым sample на каждый
+`<select>`: это ложный отчёт движка (воспроизводится на голом `<select>` в статическом HTML без
+скриптов, Chromium и Firefox молчат, скриншоты с CSP и без неё совпадают побайтно).
+
+**Не сделано:** деплой на прод. Пока https://weighly.frelikh.dev/ отдаёт без CSP и Permissions-Policy
+(curl 2026-10-28); статус станет CLOSED после деплоя и проверки снаружи.
+
 - Severity: medium
 - Area: network
 - Role: unauth (применимо ко всем)
