@@ -96,7 +96,8 @@
     "nameTooLongOrEmpty": "Название товара обязательно и должно быть не длиннее 255 символов",
     "shortNameTooLongOrEmpty": "Короткое название товара обязательно и должно быть не длиннее 128 символов",
     "invalidUnit": "Единица товара должна быть kg, g или piece",
-    "invalidStatus": "Статус товара должен быть active, inactive или archived"
+    "invalidStatus": "Статус товара должен быть active, inactive или archived",
+    "imageUrlMustBeHttpUrl": "imageUrl должен быть корректным URL с протоколом http(s)"
   },
   "publishing": {
     "catalogHasBlockingErrors": "В каталоге есть блокирующие ошибки проверки, поэтому его нельзя опубликовать",

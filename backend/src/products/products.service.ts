@@ -3,6 +3,7 @@ import { Prisma } from '../generated/prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../logs/audit-log.service';
+import { isHttpUrl } from '../advertising/image-url.util';
 import { CascadeArchiveService, type CascadeSummary } from '../shared/cascade-archive.service';
 import { buildMeta, parseLimit, parseOffset } from '../shared/pagination';
 
@@ -111,7 +112,7 @@ export class ProductsService {
       unit: this.requireProductUnit(input.unit),
       status: this.requireProductStatus(input.status),
       description: this.normalizeOptionalString(input.description),
-      imageUrl: this.normalizeOptionalString(input.imageUrl),
+      imageUrl: this.normalizeOptionalImageUrl(input.imageUrl),
       imageFileAsset: input.imageFileAssetId
         ? {
             connect: { id: input.imageFileAssetId },
@@ -165,7 +166,7 @@ export class ProductsService {
       data.description = this.normalizeOptionalString(input.description);
     }
     if (input.imageUrl !== undefined) {
-      data.imageUrl = this.normalizeOptionalString(input.imageUrl);
+      data.imageUrl = this.normalizeOptionalImageUrl(input.imageUrl);
     }
     if (input.imageFileAssetId !== undefined) {
       data.imageFileAsset = input.imageFileAssetId ? { connect: { id: input.imageFileAssetId } } : { disconnect: true };
@@ -324,6 +325,16 @@ export class ProductsService {
   private normalizeOptionalString(value: string | undefined): string | null {
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     return normalizedValue || null;
+  }
+
+  // imageUrl goes into the published package as is, and a scale cannot fetch a
+  // path without a host, such as an upload's /uploads/images/… (BUG-REG-073).
+  private normalizeOptionalImageUrl(value: string | undefined): string | null {
+    const normalizedValue = this.normalizeOptionalString(value);
+    if (normalizedValue !== null && !isHttpUrl(normalizedValue)) {
+      throw new BadRequestException(this.i18n.t('errors.products.imageUrlMustBeHttpUrl'));
+    }
+    return normalizedValue;
   }
 
   private getUsedProductWarning(activePlacementCount: number) {

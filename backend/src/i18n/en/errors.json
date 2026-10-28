@@ -96,7 +96,8 @@
     "nameTooLongOrEmpty": "Product name is required and must be no longer than 255 characters",
     "shortNameTooLongOrEmpty": "Product short name is required and must be no longer than 128 characters",
     "invalidUnit": "Product unit must be kg, g, or piece",
-    "invalidStatus": "Product status must be active, inactive, or archived"
+    "invalidStatus": "Product status must be active, inactive, or archived",
+    "imageUrlMustBeHttpUrl": "imageUrl must be a valid URL with http(s) protocol"
   },
   "publishing": {
     "catalogHasBlockingErrors": "The catalog has blocking validation errors and cannot be published",

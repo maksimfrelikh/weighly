@@ -101,10 +101,11 @@ describe('normalizeError — backend localized message passthrough for 401/403/4
   });
 });
 
-describe('resolveBackendUrl — banner imageUrl from an image upload (BUG-REG-072)', () => {
+describe('resolveBackendUrl — imageUrl from an image upload (BUG-REG-072, BUG-REG-073)', () => {
   // POST /api/files/images answers with a root-relative FileAsset.publicUrl. The banner
-  // API takes only an absolute http(s) URL (BUG-REG-040): the scales get it from the
-  // published package as is. Sending publicUrl itself ended in a 400.
+  // and product APIs take only an absolute http(s) URL (BUG-REG-040, BUG-REG-073): the
+  // scales get it from the published package as is. Sending publicUrl itself ended in a
+  // 400 for a banner and in an unfetchable package entry for a product.
   const publicUrl = '/uploads/images/3f1c9a52-8a4e-4c1b-9d0e-6b2f7c3a1e44.png';
 
   it('turns an upload path into an absolute http(s) URL on the page origin', () => {

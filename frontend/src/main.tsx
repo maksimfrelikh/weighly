@@ -2755,7 +2755,9 @@ function ProductForm({ mode, product, onCancel, onSaved }: { mode: 'create' | 'e
       }).unwrap();
       setValues((current) => ({
         ...current,
-        imageUrl: response.fileAsset.publicUrl,
+        // The product API takes only an absolute http(s) imageUrl, and the scales get it
+        // from the published package as is (BUG-REG-073).
+        imageUrl: resolveBackendUrl(response.fileAsset.publicUrl),
         imageFileAssetId: response.fileAsset.id,
       }));
       setUploadNotice(t('editor.upload.noticeSaved', { name: response.fileAsset.originalFileName }));
