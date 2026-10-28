@@ -1,6 +1,6 @@
 # BUG-REG-019: Product imageUrl принимает javascript: URL и рендерится в `<img src>` на edit page
 
-- Status: FIXED в main (2026-10-28) вместе с [BUG-REG-073](../../2026-10-28/bugs/BUG-REG-073-product-image-relative-url.md), на проде — после деплоя. POST и PATCH `/api/products` принимают в `imageUrl` только пустое значение или абсолютный http(s) URL, `javascript:` получает 400; закреплено `backend/test/regression/bug-reg-073-product-image-relative-url.spec.ts`. Сохранённых `imageUrl` на проде нет (read-only запрос 2026-10-28), так что старых значений, которые форма могла бы подставить в `<img src>`, тоже нет.
+- Status: FIXED, на проде с 2026-10-28 (деплой `666f0ed`) вместе с [BUG-REG-073](../../2026-10-28/bugs/BUG-REG-073-product-image-relative-url.md). POST и PATCH `/api/products` принимают в `imageUrl` только пустое значение или абсолютный http(s) URL, `javascript:` получает 400; закреплено `backend/test/regression/bug-reg-073-product-image-relative-url.spec.ts`. Сохранённых `imageUrl` на проде нет (read-only запрос 2026-10-28), так что старых значений, которые форма могла бы подставить в `<img src>`, тоже нет.
 - Severity: medium
 - Area: api / forms
 - Role: admin + operator (operator может создавать products)
