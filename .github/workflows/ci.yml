@@ -31,6 +31,15 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: npm ci
+      - name: prisma generate
+        # src/generated/prisma is not committed; nest build and the specs
+        # need the generated client. prisma.config.ts resolves DATABASE_URL
+        # while it loads, so even `generate` (which never connects) needs the
+        # variable to exist — same placeholder as backend/Dockerfile.
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+        run: npx prisma generate
       - name: Build (nest build)
         working-directory: backend
         run: npm run build

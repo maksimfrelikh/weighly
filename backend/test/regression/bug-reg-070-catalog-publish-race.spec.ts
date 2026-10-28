@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ConflictException } from '@nestjs/common';
-import { Prisma } from '../../src/generated/prisma/client';
-
 // CatalogPublishingService is @Injectable() with parameter properties — node's
 // strip-only runner cannot parse it, so we import the compiled class from
-// dist/. Run `npm run build` before this spec.
+// dist/. Run `npm run build` before this spec. The Prisma namespace comes
+// from dist/ too: node's ESM loader does not resolve the extensionless
+// '../../src/generated/prisma/client', and the compiled service checks
+// `instanceof` against the dist/ copy of PrismaClientKnownRequestError.
+import { Prisma } from '../../dist/generated/prisma/client.js';
 import { CatalogPublishingService } from '../../dist/publishing/catalog-publishing.service.js';
 
 // BUG-REG-070 — two concurrent POST /api/stores/:storeId/publishing/catalog-publish
