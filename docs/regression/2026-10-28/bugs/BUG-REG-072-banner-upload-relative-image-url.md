@@ -80,8 +80,9 @@ POST /api/stores/<id>/advertising/banners
     путь, разрешённый от origin сайта, создаёт баннер с абсолютным URL. Тест идёт в CI.
   - `frontend/src/shared/api/backendApi.test.ts`, блок `resolveBackendUrl` (BUG-REG-072): путь
     загрузки → абсолютный http(s) на origin страницы, абсолютный URL не меняется, при непустом
-    `VITE_API_BASE_URL` берётся его origin. Эти тесты гоняет только `npm test`: job фронтенда в
-    `.github/workflows/ci.yml` делает `npm ci` и `npm run build`, без тестов.
+    `VITE_API_BASE_URL` берётся его origin. В момент фикса CI их не гонял: job фронтенда в
+    `.github/workflows/ci.yml` делал только `npm ci` и `npm run build`. Тем же днём в job добавлен
+    `npm test` перед сборкой.
 - **Гейты.** Backend: `nest build` и `node --test 'src/**/*.spec.ts' 'test/regression/**/*.spec.ts'`,
   199/199. Frontend: `npm test` 16/16, `npm run build`.
 - **Docker smoke.** Окружение то же, что выше, `FRONTEND_ORIGIN=https://edge`. Один и тот же скрипт

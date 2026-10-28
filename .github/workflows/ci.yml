@@ -53,7 +53,7 @@ jobs:
         run: node --test 'src/**/*.spec.ts' 'test/regression/**/*.spec.ts'
 
   frontend-build:
-    name: Frontend (tsc + vite build)
+    name: Frontend (vitest + tsc + vite build)
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+      - name: Test (vitest)
+        working-directory: frontend
+        run: npm test
       - name: Build (tsc -b && vite build)
         working-directory: frontend
         run: npm run build

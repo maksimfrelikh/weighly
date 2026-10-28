@@ -1,6 +1,6 @@
 # BUG-REG-051 — GitHub Actions CI pipeline missing
 
-**Status:** OPEN — backlog
+**Status:** CI есть с `8eb3bca` (2026-05-21, #36): `.github/workflows/ci.yml` идёт на каждый PR и push в `main`. Тесты бэкенда — `node --test` по `*.spec.ts`, а не jest; `npm test` фронтенда добавлен в job 2026-10-28. **Не выполнено:** защита `main` не требует зелёного CI — `required_status_checks` выключены (`enforcement_level: off`, проверок нет; публичный API GitHub, 2026-10-28).
 **Severity:** medium
 **Area:** infra / CI
 **Origin:** pre-Wave-5 infrastructure review (2026-05-20). No `.github/workflows/` directory exists; PRs merge without automated tests / lint / build verification. Manual gates (§4.2 code-glance, §4.3 repro) are run by the Manager subagent but are not an automated safety net — a Manager that skips a step or a Lead who self-merges without dispatching has nothing to catch it.
