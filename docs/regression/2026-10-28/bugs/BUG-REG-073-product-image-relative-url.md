@@ -101,8 +101,8 @@ Read-only запрос к Postgres прода (netcup, `BEGIN TRANSACTION READ O
     как URL, который разбирается без базы. Пустой, пробельный и очищенный `imageUrl` дают `null`. На
     сборке `799ec46` (до фикса) два теста на отказ падают, три остальных проходят. Тест идёт в CI.
   - `frontend/src/shared/api/backendApi.test.ts`: блок `resolveBackendUrl` теперь про оба вызова
-    (BUG-REG-072, BUG-REG-073). Эти тесты гоняет только `npm test`: job фронтенда в
-    `.github/workflows/ci.yml` делает `npm ci` и `npm run build`, без тестов.
+    (BUG-REG-072, BUG-REG-073). Идёт в CI: с `9519fb2` job фронтенда в `.github/workflows/ci.yml`
+    запускает `npm test` перед сборкой.
 - **Гейты.** Backend: `nest build` и `node --test 'src/**/*.spec.ts' 'test/regression/**/*.spec.ts'`,
   204/204. Frontend: `npm test` 16/16, `npm run build`.
 - **Docker smoke.** Окружение то же, что выше, `FRONTEND_ORIGIN=https://edge`. Один и тот же скрипт
