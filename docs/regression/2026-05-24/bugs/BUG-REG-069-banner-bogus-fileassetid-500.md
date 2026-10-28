@@ -1,7 +1,7 @@
 # BUG-REG-069 — POST advertising banner with non-existent imageFileAssetId returns 500
 
 **Severity:** medium (UX/error-handling — not security, not data-integrity)
-**Status:** open
+**Status:** fixed в main — `95d904c` (2026-05-24, hotfix batch #49), закреплено `backend/test/regression/bug-reg-069-banner-fk-precheck.spec.ts`
 **Discovered:** 2026-05-24, Wave 5 §5.1.h (REGRESSION-2026-05-24)
 **Env:** staging (commit `0cf0966`), also expected on prod commit `3538b7c` (same code path)
 **Reporter:** Lead (single-inline)

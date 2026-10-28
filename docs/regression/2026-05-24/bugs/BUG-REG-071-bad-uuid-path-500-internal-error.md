@@ -1,7 +1,7 @@
 # BUG-REG-071 — Path-parameter `:id` not in UUID format returns HTTP 500 with English `Internal server error`
 
 **Severity:** medium (UX/error-handling + i18n surface, no security exploit, matches BUG-REG-069 precedent)
-**Status:** open
+**Status:** fixed в main — `95d904c` (2026-05-24, hotfix batch #49), закреплено `backend/test/regression/bug-reg-071-invalid-uuid-path.spec.ts`
 **Discovered:** 2026-05-24, Wave 7 §7.1 (REGRESSION-2026-05-24)
 **Env:** staging (commit `0cf0966`); also expected on prod commit `3538b7c` (same code path)
 **Reporter:** Lead (single-inline)

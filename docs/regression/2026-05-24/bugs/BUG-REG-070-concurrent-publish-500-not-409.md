@@ -1,7 +1,7 @@
 # BUG-REG-070 — Concurrent /catalog-publish returns 500 instead of 409
 
 **Severity:** medium (API contract — atomicity intact, but error code obscures cause)
-**Status:** open
+**Status:** fixed в main — `95d904c` (2026-05-24, hotfix batch #49), закреплено `backend/test/regression/bug-reg-070-catalog-publish-race.spec.ts`
 **Discovered:** 2026-05-24, Wave 5 §5.7.C (REGRESSION-2026-05-24)
 **Env:** staging (commit `0cf0966`)
 **Reporter:** Lead (single-inline)

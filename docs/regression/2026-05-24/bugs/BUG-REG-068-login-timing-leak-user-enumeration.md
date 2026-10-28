@@ -1,6 +1,6 @@
 # BUG-REG-068 — POST /api/auth/login leaks user-existence via response latency
 
-**Status:** OPEN
+**Status:** fixed в main — `95d904c` (2026-05-24, hotfix batch #49), закреплено `backend/test/regression/bug-reg-068-login-timing.spec.ts`
 **Severity:** medium (information leak, not auth bypass)
 **Area:** backend / auth
 **Found during:** REGRESSION-2026-05-24 Wave 1, sub-block §1.2 (2026-05-24 ~13:02 GMT+2)
