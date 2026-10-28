@@ -1,6 +1,6 @@
 # BUG-REG-002: Дополнительные security headers отсутствуют (X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy, Permissions-Policy)
 
-## Status: FIXED в main (2026-10-28), на проде — после деплоя
+## Status: CLOSED (2026-10-28) — на проде с 1286ff6
 
 Заголовки ставят два nginx, и делят их так:
 
@@ -20,8 +20,11 @@
 `<select>`: это ложный отчёт движка (воспроизводится на голом `<select>` в статическом HTML без
 скриптов, Chromium и Firefox молчат, скриншоты с CSP и без неё совпадают побайтно).
 
-**Не сделано:** деплой на прод. Пока https://weighly.frelikh.dev/ отдаёт без CSP и Permissions-Policy
-(curl 2026-10-28); статус станет CLOSED после деплоя и проверки снаружи.
+На проде с 1286ff6 (деплой 2026-10-28, `/api/version` → `1286ff6`). Проверено снаружи в тот же день:
+curl по `/`, `/login`, `/forgot-password`, `/reset-password`, `/index.html` — CSP и Permissions-Policy
+плюс четыре заголовка хоста, `/api/health` — только заголовки хоста. В Chromium, Firefox и WebKit
+страницы входа, восстановления пароля и приглашения и отправка формы входа (несуществующий адрес →
+401 и «Неверный email или пароль» в форме) — без нарушений CSP, кроме того же отчёта WebKit про `<select>`.
 
 - Severity: medium
 - Area: network
