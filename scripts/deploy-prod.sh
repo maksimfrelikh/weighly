@@ -114,7 +114,10 @@ case "$ACTION" in
     BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     export BUILT_AT
     echo "[deploy-prod] BUILD_SHA=$BUILD_SHA BUILT_AT=$BUILT_AT"
-    docker compose "${COMPOSE_FILES[@]}" "${ENV_FILE[@]}" -p "$PROJECT" build
+    # --pull: the images build FROM node:26-alpine and nginx:alpine, and without it the build
+    # reuses whatever those tags pointed to when they were last fetched here, so a Node release
+    # never reached the containers (26.13.0 came out 2026-10-28; they still ran 26.12.1 on 10-30).
+    docker compose "${COMPOSE_FILES[@]}" "${ENV_FILE[@]}" -p "$PROJECT" build --pull
 
     # 8. Up (entrypoint handles migrate + seed per BUG-REG-038)
     echo ""
