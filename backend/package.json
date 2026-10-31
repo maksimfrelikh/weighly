@@ -4,7 +4,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "nest build",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
@@ -34,6 +34,7 @@
     "@nestjs/schematics": "^12.0.6",
     "@nestjs/testing": "^12.1.2",
     "@types/node": "^26.6.5",
-    "typescript": "^6.0.3"
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }
